@@ -22,10 +22,7 @@ function App() {
     () => (localStorage.getItem('language') as Language) || 'en',
   )
   const [dark, setDark] = useState(
-    () =>
-      localStorage.getItem('theme') === 'dark' ||
-      (!localStorage.getItem('theme') &&
-        window.matchMedia('(prefers-color-scheme: dark)').matches),
+    () => localStorage.getItem('theme') === 'dark',
   )
   const [selected, setSelected] = useState<Project | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
