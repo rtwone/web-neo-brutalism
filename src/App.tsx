@@ -78,7 +78,8 @@ function App() {
     }
   }
 
-  const isProjectsPage = window.location.pathname === '/projects'
+  const currentPath = window.location.pathname.replace(/\/$/, '') || '/'
+  const isProjectsPage = currentPath === '/projects'
   const filteredProjectPage = projectFilter === 'All'
     ? projects
     : projects.filter((project) => project.category === projectFilter)
