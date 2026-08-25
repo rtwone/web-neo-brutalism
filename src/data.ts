@@ -25,7 +25,7 @@ export const translations = {
             focus: 'Fokus saat ini',
             cta: 'Lebih dekat',
         },
-        marquee: 'PROGRAMMING | TECH | AI ENTHUSIAST | VIDEOGRAPHY | PHOTOGRAPHY | DESIGN GRAPHIC | ASTROPHILE | NATURE | HISTORY |',
+        marquee: 'PEMROGRAMAN | TEKNOLOGI | PENGGEMAR AI | VIDEOGRAFI | FOTOGRAFI | DESAIN GRAFIS | ASTROFIL | ALAM | SEJARAH |',
         skills: {
             kicker: '02 / Toolkit',
             title: 'Technical skills',
