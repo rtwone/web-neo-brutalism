@@ -289,7 +289,7 @@ export const projects = [
             id: 'Otomasi WhatsApp',
             en: 'WhatsApp Automation',
         },
-        year: '2025',
+        year: '2026',
         image: '/images/baileys-base.jpg',
         fallbackColor: '#ffea72',
         description: {
@@ -311,7 +311,7 @@ export const projects = [
             id: 'Otomasi WhatsApp',
             en: 'WhatsApp Automation',
         },
-        year: '2025',
+        year: '2021',
         image: '/images/chitandabot.jpg',
         fallbackColor: '#8ab4f0',
         description: {
