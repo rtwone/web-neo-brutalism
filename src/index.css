@@ -1,0 +1,16 @@
+:root {
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+:focus-visible {
+  outline: 3px solid #438bd2;
+  outline-offset: 3px;
+}
+
+::selection {
+  background: #f8d34f;
+  color: #141414;
+}
