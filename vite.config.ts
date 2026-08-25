@@ -1,7 +1,7 @@
 import react from '@vitejs/plugin-react'
 import { loadEnv, type Plugin, defineConfig } from 'vite'
-import handler from './api/contact'
-import type { VercelRequest, VercelResponse } from './api/contact'
+import handler from './api/contact.js'
+import type { VercelRequest, VercelResponse } from './api/contact.js'
 
 function contactApi(): Plugin {
   return {
@@ -22,15 +22,15 @@ function contactApi(): Plugin {
           try {
             const body = JSON.parse(Buffer.concat(chunks).toString('utf8')) as Record<string, unknown>
             const apiResponse: VercelResponse = {
-              status: (status) => {
+              status: (status: number) => {
                 response.statusCode = status
                 return apiResponse
               },
-              json: (body) => {
+              json: (body: object) => {
                 response.setHeader('Content-Type', 'application/json')
                 response.end(JSON.stringify(body))
               },
-              setHeader: (name, value) => response.setHeader(name, value),
+              setHeader: (name: string, value: string) => response.setHeader(name, value),
             }
 
             await handler({ method: request.method, body } satisfies VercelRequest, apiResponse)
