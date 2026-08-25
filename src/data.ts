@@ -89,7 +89,7 @@ export const translations = {
             focus: 'Current focus',
             cta: 'Get to know me',
         },
-        marquee: 'DESIGN • CODE • CREATE • EXPLORE • ',
+        marquee: 'PROGRAMMING | TECH | AI ENTHUSIAST | VIDEOGRAPHY | PHOTOGRAPHY | DESIGN GRAPHIC | ASTROPHILE | NATURE | HISTORY |',
         skills: {
             kicker: '02 / Toolkit',
             title: 'Technical skills',
