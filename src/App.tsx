@@ -313,7 +313,7 @@ function App() {
               <div className="contact-details">
                 <span>{t.contact.details}</span>
                 <div className="contact-social">
-                  <a href="mailto:irfanhariyanto317@example.com"><ContactIcon name="mail" />Email</a>
+                  <a href="mailto:irfanhariyanto317@gmail.com"><ContactIcon name="mail" />Email</a>
                   <a href="https://github.com/rtwone" target="_blank"><ContactIcon name="github" />GitHub</a>
                   <a href="https://instagram.com/irfvnny" target="_blank"><ContactIcon name="instagram" />Instagram</a>
                   <a href="https://www.linkedin.com/in/irfanhariyanto" target="_blank"><ContactIcon name="linkedin" />LinkedIn</a>
