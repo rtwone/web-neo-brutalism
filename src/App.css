@@ -878,6 +878,49 @@ footer a:hover {
   padding: 62px max(5vw, 24px) 110px;
 }
 
+.twibbon-alert {
+  position: fixed;
+  top: 82px;
+  right: max(5vw, 24px);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  max-width: min(420px, calc(100vw - 48px));
+  padding: 14px 15px 14px 18px;
+  border: 2px solid var(--line);
+  background: var(--yellow);
+  box-shadow: 5px 5px 0 var(--line);
+  color: #141414;
+  font: 700 12px/1.4 var(--mono);
+  animation: twibbon-alert-in .3s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.twibbon-alert button {
+  flex: 0 0 auto;
+  width: 25px;
+  height: 25px;
+  border: 2px solid var(--line);
+  background: #F26A3D;
+  color: #141414;
+  font-size: 19px;
+  line-height: 17px;
+}
+
+@keyframes twibbon-alert-in {
+  from {
+    opacity: 0;
+    translate: 18px -10px;
+    rotate: 1deg;
+  }
+
+  to {
+    opacity: 1;
+    translate: 0 0;
+    rotate: 0deg;
+  }
+}
+
 .twibbon-hero {
   display: flex;
   align-items: center;

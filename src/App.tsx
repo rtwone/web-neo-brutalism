@@ -19,6 +19,7 @@ function TwibbonPage() {
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [caption, setCaption] = useState(TWIBBON_CAPTION)
   const [feedback, setFeedback] = useState('')
+  const [actionError, setActionError] = useState<'download' | 'instagram' | null>(null)
   const renderCanvasRef = useRef<() => void>(() => { })
 
   const renderCanvas = useCallback(() => {
@@ -85,6 +86,7 @@ function TwibbonPage() {
       setFileName(file.name)
       setZoom(1)
       setPosition({ x: 0, y: 0 })
+      setActionError(null)
       setFeedback('Foto siap diatur.')
     }
     photo.src = nextUrl
@@ -97,6 +99,7 @@ function TwibbonPage() {
     setFileName('')
     setZoom(1)
     setPosition({ x: 0, y: 0 })
+    setActionError(null)
     setFeedback('')
   }
 
@@ -137,7 +140,18 @@ function TwibbonPage() {
 
   const canvasBlob = () => new Promise<Blob | null>((resolve) => canvasRef.current?.toBlob(resolve, 'image/png', 1))
 
+  const rejectAction = (action: 'download' | 'instagram') => {
+    setFeedback('Upload foto terlebih dahulu sebelum melanjutkan.')
+    setActionError(null)
+    requestAnimationFrame(() => setActionError(action))
+    window.setTimeout(() => setActionError(null), 450)
+  }
+
   const download = async () => {
+    if (!photoUrl) {
+      rejectAction('download')
+      return
+    }
     const blob = await canvasBlob()
     if (!blob) return
     const link = document.createElement('a')
@@ -149,6 +163,10 @@ function TwibbonPage() {
   }
 
   const shareToInstagram = async () => {
+    if (!photoUrl) {
+      rejectAction('instagram')
+      return
+    }
     const blob = await canvasBlob()
     if (!blob) return
     const file = new File([blob], 'twibbon-karya.png', { type: 'image/png' })
@@ -169,6 +187,12 @@ function TwibbonPage() {
 
   return (
     <main className="twibbon-page">
+      {feedback && (
+        <div className="twibbon-alert" role="status" aria-live="polite">
+          <span>{feedback}</span>
+          <button type="button" aria-label="Tutup notifikasi" onClick={() => setFeedback('')}>×</button>
+        </div>
+      )}
       <section className="twibbon-hero">
         <div>
           <span className="eyebrow">05 / CREATIVE TOOL</span>
@@ -222,7 +246,7 @@ function TwibbonPage() {
 
       <section className="twibbon-actions" aria-label="Twibbon actions">
         <div><span className="eyebrow">04 / READY TO SHARE</span><p>{feedback || 'Sudah siap? Download atau bagikan hasil twibbon kamu.'}</p></div>
-        <div className="twibbon-action-buttons"><button type="button" className="button primary" onClick={download}>Download Twibbon <span>↓</span></button><button type="button" className="button instagram-button" onClick={shareToInstagram}>Post ke Instagram <span>↗</span></button></div>
+        <div className="twibbon-action-buttons"><button type="button" className={`button primary ${actionError === 'download' ? 'shake-error' : ''}`} onClick={download}>Download Twibbon <span>↓</span></button><button type="button" className={`button instagram-button ${actionError === 'instagram' ? 'shake-error' : ''}`} onClick={shareToInstagram}>Post ke Instagram <span>↗</span></button></div>
       </section>
     </main>
   )
