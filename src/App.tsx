@@ -117,6 +117,29 @@ function App() {
     return () => observer.disconnect()
   }, [])
 
+  useEffect(() => {
+    const revealElements = Array.from(document.querySelectorAll<HTMLElement>(
+      '.section:not(.hero) > *, .marquee, footer > *',
+    ))
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          entry.target.classList.toggle('is-visible', entry.isIntersecting)
+        })
+      },
+      { rootMargin: '0px 0px -10% 0px', threshold: .12 },
+    )
+
+    revealElements.forEach((element, index) => {
+      element.classList.add('reveal-on-scroll')
+      element.style.setProperty('--reveal-delay', `${Math.min(index % 4, 3) * 70}ms`)
+      observer.observe(element)
+    })
+
+    return () => observer.disconnect()
+  }, [])
+
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const form = event.currentTarget
