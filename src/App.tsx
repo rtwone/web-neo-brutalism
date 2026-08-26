@@ -167,21 +167,12 @@ function TwibbonPage() {
       rejectAction('instagram')
       return
     }
+    const instagramWindow = window.open('https://www.instagram.com/create/select/', '_blank', 'noopener,noreferrer')
     const blob = await canvasBlob()
     if (!blob) return
-    const file = new File([blob], 'twibbon-karya.png', { type: 'image/png' })
-    try {
-      if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
-        await navigator.share({ files: [file], text: caption })
-        setFeedback('Twibbon siap dibagikan. Selesaikan posting secara manual di Instagram.')
-        return
-      }
-    } catch (error) {
-      if ((error as DOMException).name === 'AbortError') return
-    }
     await navigator.clipboard?.writeText(caption)
     await download()
-    window.open('https://www.instagram.com/create/select/', '_blank', 'noopener,noreferrer')
+    if (!instagramWindow) window.location.assign('https://www.instagram.com/create/select/')
     setFeedback('Twibbon diunduh dan caption disalin. Tinggal posting di Instagram.')
   }
 
