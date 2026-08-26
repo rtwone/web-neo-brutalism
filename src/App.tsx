@@ -118,8 +118,13 @@ function App() {
   }, [])
 
   useEffect(() => {
+    document.querySelectorAll<HTMLElement>('.reveal-on-scroll').forEach((element) => {
+      element.classList.remove('reveal-on-scroll', 'is-visible')
+      element.style.removeProperty('--reveal-delay')
+    })
+
     const revealElements = Array.from(document.querySelectorAll<HTMLElement>(
-      '.section:not(.hero) > *, .marquee, footer > *',
+      '.section:not(.hero) > *, .marquee, footer',
     ))
 
     const observer = new IntersectionObserver(
@@ -128,7 +133,7 @@ function App() {
           entry.target.classList.toggle('is-visible', entry.isIntersecting)
         })
       },
-      { rootMargin: '0px 0px -10% 0px', threshold: .12 },
+      { rootMargin: '0px', threshold: .08 },
     )
 
     revealElements.forEach((element, index) => {
@@ -137,7 +142,13 @@ function App() {
       observer.observe(element)
     })
 
-    return () => observer.disconnect()
+    return () => {
+      observer.disconnect()
+      revealElements.forEach((element) => {
+        element.classList.remove('reveal-on-scroll', 'is-visible')
+        element.style.removeProperty('--reveal-delay')
+      })
+    }
   }, [])
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
