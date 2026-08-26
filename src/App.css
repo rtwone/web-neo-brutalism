@@ -234,7 +234,7 @@ button {
 }
 
 .brand {
-  font-size: 22px;
+  font-size: 25px;
   font-weight: 700;
   letter-spacing: -1px;
 }
@@ -252,9 +252,10 @@ button {
 .nav-brand-text {
   display: flex;
   flex-direction: column;
-  color: var(--muted);
-  font: 10px/1.25 var(--mono);
+  color: var(--ink);
+  font: 500 11px/1.25 var(--mono);
   letter-spacing: .04em;
+  text-shadow: 1px 1px 0 var(--yellow);
   text-transform: uppercase;
 }
 
@@ -352,7 +353,12 @@ footer a:hover {
   font: 700 13px var(--mono);
   letter-spacing: .06em;
   text-transform: uppercase;
-  color: var(--muted);
+  display: inline-block;
+  padding: 4px 7px;
+  color: var(--ink);
+  background: var(--yellow);
+  border: 2px solid var(--line);
+  box-shadow: 3px 3px 0 var(--ink);
 }
 
 .eyebrow-mark {
