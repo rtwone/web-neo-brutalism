@@ -181,7 +181,7 @@ function TwibbonPage() {
     }
     await navigator.clipboard?.writeText(caption)
     await download()
-    window.open('https://www.instagram.com/', '_blank', 'noopener,noreferrer')
+    window.open('https://www.instagram.com/create/select/', '_blank', 'noopener,noreferrer')
     setFeedback('Twibbon diunduh dan caption disalin. Tinggal posting di Instagram.')
   }
 
