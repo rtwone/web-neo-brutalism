@@ -258,17 +258,44 @@ export const skills: Skill[] = [
     },
 ]
 
-export const projects = [
+type LocalizedText = { id: string; en: string }
+
+type DevelopmentProject = {
+    id: number
+    category: 'Development'
+    title: string
+    type: LocalizedText
+    year: string
+    image: string
+    fallbackColor: string
+    description: LocalizedText
+    tech: string[]
+    role: LocalizedText
+    github?: string
+    url?: string
+}
+
+type DesignProject = {
+    id: number
+    category: 'Design'
+    image: string
+    fallbackColor: string
+    url?: string
+}
+
+export type Project = DevelopmentProject | DesignProject
+
+export const projects: Project[] = [
     {
         id: 1,
-        category: 'Development' as ProjectCategory,
+        category: 'Development',
         title: 'RSUD System',
         type: {
             id: 'Aplikasi desktop',
             en: 'Desktop application',
         },
         year: '2026',
-        image: '/images/rsud-preview.png',
+        image: '/images/developments/rsud-preview.png',
         fallbackColor: '#f28d69',
         description: {
             id: 'Sistem informasi rumah sakit berbasis desktop untuk membantu alur data pasien.',
@@ -283,7 +310,7 @@ export const projects = [
     },
     {
         id: 2,
-        category: 'Development' as ProjectCategory,
+        category: 'Development',
         title: 'Baileys Base',
         type: {
             id: 'Otomasi WhatsApp',
@@ -305,7 +332,7 @@ export const projects = [
     },
     {
         id: 3,
-        category: 'Development' as ProjectCategory,
+        category: 'Development',
         title: 'ChitandaBot',
         type: {
             id: 'Otomasi WhatsApp',
@@ -325,7 +352,104 @@ export const projects = [
         },
         github: 'https://github.com/rtwone/chitandabot',
     },
+    {
+        id: 4,
+        category: 'Design',
+        image: '/images/designs/17agustus2026.webp',
+        fallbackColor: '#f8d34f',
+        url: '',
+    },
+    {
+        id: 5,
+        category: 'Design',
+        image: '/images/designs/5kesalahanmahasiswa.webp',
+        fallbackColor: '#8ab4f0',
+        url: '',
+    },
+    {
+        id: 6,
+        category: 'Design',
+        image: '/images/designs/maulidnabi.webp',
+        fallbackColor: '#a8e3b4',
+        url: '',
+    },
+    {
+        id: 7,
+        category: 'Design',
+        image: '/images/designs/1muharram.webp',
+        fallbackColor: '#8ab4f0',
+        url: '',
+    },
+    {
+        id: 8,
+        category: 'Design',
+        image: '/images/designs/aftermovieipw.webp',
+        fallbackColor: '#f28d69',
+        url: '',
+    },
+    {
+        id: 10,
+        category: 'Design',
+        image: '/images/designs/docitclass.webp',
+        fallbackColor: '#a8e3b4',
+        url: '',
+    },
+    {
+        id: 11,
+        category: 'Design',
+        image: '/images/designs/harpennas.webp',
+        fallbackColor: '#8ab4f0',
+        url: '',
+    },
+    {
+        id: 12,
+        category: 'Design',
+        image: '/images/designs/iduladha.webp',
+        fallbackColor: '#a8e3b4',
+        url: '',
+    },
+    {
+        id: 13,
+        category: 'Design',
+        image: '/images/designs/idulfitri.webp',
+        fallbackColor: '#ffea72',
+        url: '',
+    },
+    {
+        id: 14,
+        category: 'Design',
+        image: '/images/designs/itclass.webp',
+        fallbackColor: '#f28d69',
+        url: '',
+    },
+    {
+        id: 15,
+        category: 'Design',
+        image: '/images/designs/kenaikanyesus.webp',
+        fallbackColor: '#8ab4f0',
+        url: '',
+    },
+    {
+        id: 16,
+        category: 'Design',
+        image: '/images/designs/nyepi.webp',
+        fallbackColor: '#a8e3b4',
+        url: '',
+    },
+    {
+        id: 17,
+        category: 'Design',
+        image: '/images/designs/ramadhan.webp',
+        fallbackColor: '#ffea72',
+        url: '',
+    },
+    {
+        id: 18,
+        category: 'Design',
+        image: '/images/designs/workshopipw2026.webp',
+        fallbackColor: '#f28d69',
+        url: '',
+    },
 ]
 
 export type Translations = typeof translations.id
-export type Project = typeof projects[number] & { url?: string }

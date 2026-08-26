@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties, FormEvent } from 'react'
 import { projects, skills, translations } from './data'
 import type { Language, Project, ProjectCategory } from './data'
@@ -17,6 +17,28 @@ function ContactIcon({ name }: { name: ContactIconName }) {
   return <svg className="contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>
 }
 
+function DesignProjectCard({ project, onSelect }: { project: Project; onSelect: (project: Project) => void }) {
+  return (
+    <article
+      className="project-card design-project-card"
+      onClick={() => onSelect(project)}
+      tabIndex={0}
+      onKeyDown={(event) => event.key === 'Enter' && onSelect(project)}
+    >
+      <div className="project-image" style={{ backgroundColor: project.fallbackColor }}>
+        <img
+          loading="lazy"
+          decoding="async"
+          src={project.image}
+          alt="Design project preview"
+          onError={(event) => { event.currentTarget.style.opacity = '0' }}
+        />
+        <span>{project.category}</span>
+      </div>
+    </article>
+  )
+}
+
 function App() {
   const [language, setLanguage] = useState<Language>(
     () => (localStorage.getItem('language') as Language) || 'en',
@@ -29,6 +51,12 @@ function App() {
   const [projectFilter, setProjectFilter] = useState<'All' | ProjectCategory>('All')
   const [showScrollTop, setShowScrollTop] = useState(false)
   const [scrollDepth, setScrollDepth] = useState(0)
+  const pendingNavigation = useRef<string | null>(null)
+  const [activeSection, setActiveSection] = useState(
+    () => window.location.pathname.replace(/\/$/, '') === '/projects'
+      ? 'projects'
+      : window.location.hash.slice(1) || 'home',
+  )
   const [formState, setFormState] = useState<'idle' | 'sending' | 'success' | 'validation-error' | 'send-error'>('idle')
   const t = translations[language]
   useEffect(() => {
@@ -49,6 +77,44 @@ function App() {
     handleScroll()
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  useEffect(() => {
+    const handleHashChange = () => setActiveSection(window.location.hash.slice(1) || 'home')
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
+  }, [])
+
+  useEffect(() => {
+    if (window.location.pathname.replace(/\/$/, '') === '/projects') return
+
+    const sections = ['home', 'about', 'projects', 'contact']
+      .map((sectionId) => document.getElementById(sectionId))
+      .filter((section): section is HTMLElement => section !== null)
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (pendingNavigation.current) {
+          const targetEntry = entries.find(
+            (entry) => entry.isIntersecting && entry.target.id === pendingNavigation.current,
+          )
+
+          if (!targetEntry) return
+          pendingNavigation.current = null
+          setActiveSection(targetEntry.target.id)
+          return
+        }
+
+        const visibleSection = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((first, second) => second.intersectionRatio - first.intersectionRatio)[0]
+
+        if (visibleSection) setActiveSection(visibleSection.target.id)
+      },
+      { rootMargin: '-20% 0px -55% 0px', threshold: [0, .25, .5, .75] },
+    )
+
+    sections.forEach((section) => observer.observe(section))
+    return () => observer.disconnect()
   }, [])
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -83,10 +149,15 @@ function App() {
   const filteredProjectPage = projectFilter === 'All'
     ? projects
     : projects.filter((project) => project.category === projectFilter)
+  const designProjects = projects.filter((project) => project.category === 'Design')
+  const developmentProjects = projects.filter((project) => project.category === 'Development')
   return (
     <div className="site-shell">
       <header className="navbar">
-        <a className="brand" href={isProjectsPage ? '/' : '/'}>IH<span>.</span></a>
+        <div className="nav-brand">
+          <a className="brand" href={isProjectsPage ? '/' : '/'}>IH<span>.</span></a>
+          <span className="nav-brand-text">Portofolio<br />Irfan Hariyanto</span>
+        </div>
         <button
           className="menu-button"
           aria-label="Toggle navigation"
@@ -98,9 +169,14 @@ function App() {
         <nav className={menuOpen ? 'nav-links open' : 'nav-links'}>
           {Object.entries(t.nav).map(([key, label]) => (
             <a
+              className={activeSection === key ? 'active' : ''}
               key={key}
               href={`${isProjectsPage ? '/' : ''}#${key === 'home' ? 'home' : key}`}
-              onClick={() => setMenuOpen(false)}
+              onClick={() => {
+                pendingNavigation.current = key
+                setActiveSection(key)
+                setMenuOpen(false)
+              }}
             >
               {label}
             </a>
@@ -148,9 +224,15 @@ function App() {
                 </button>
               ))}
             </div>
-            <div className="project-grid">
+            {projectFilter === 'Design' ? (
+              <div className="project-grid design-project-grid">
+                {filteredProjectPage.map((project) => (
+                  <DesignProjectCard key={project.id} project={project} onSelect={setSelected} />
+                ))}
+              </div>
+            ) : <div className="project-grid">
               {filteredProjectPage.map((project) => (
-                <article
+                project.category === 'Design' ? <DesignProjectCard key={project.id} project={project} onSelect={setSelected} /> : <article
                   className="project-card"
                   key={project.id}
                   onClick={() => setSelected(project)}
@@ -175,7 +257,7 @@ function App() {
                   </div>
                 </article>
               ))}
-            </div>
+            </div>}
           </section>
         ) : <>
           <section id="home" className="hero section">
@@ -225,6 +307,9 @@ function App() {
                 <div className="portrait-inner">
                   <img src="/images/profile.jpg" alt="Irfan Hariyanto" />
                 </div>
+                <div className="portrait-orbit" aria-hidden="true">
+                  {Array.from({ length: 12 }, (_, index) => <span className="orbit-dot" key={index} />)}
+                </div>
                 <div className="portrait-tag">CREATIVE<br />TECH ✦</div>
               </div>
               <div className="about-content">
@@ -271,7 +356,7 @@ function App() {
               <p>{t.projects.sub}</p>
             </div>
             <div className="project-grid">
-              {projects.slice(0, 3).map((project) => (
+              {developmentProjects.slice(0, 3).map((project) => (
                 <article
                   className="project-card"
                   key={project.id}
@@ -298,6 +383,13 @@ function App() {
                 </article>
               ))}
             </div>
+            {designProjects.length > 0 && (
+              <div className="design-project-preview">
+                {designProjects.slice(0, 3).map((project) => (
+                  <DesignProjectCard key={project.id} project={project} onSelect={setSelected} />
+                ))}
+              </div>
+            )}
             {projects.length > 3 && (
               <a className="text-link project-more" href="/projects">
                 {t.projects.more} <span>↗</span>
@@ -327,7 +419,17 @@ function App() {
               </div>
               <label>{t.contact.subject}<input required name="subject" placeholder="Let's build something" /></label>
               <label>{t.contact.message}<textarea required name="message" rows={4} placeholder="Tell me a little about your idea..." /></label>
-              <button type="submit" className="button primary" disabled={formState === 'sending'}>
+              <button
+                type="submit"
+                className={`button primary ${formState === 'validation-error' ? 'shake-error' : ''}`}
+                disabled={formState === 'sending'}
+                onClick={(event) => {
+                  if (event.currentTarget.form?.checkValidity() === false) {
+                    setFormState('idle')
+                    requestAnimationFrame(() => setFormState('validation-error'))
+                  }
+                }}
+              >
                 {formState === 'sending' ? t.contact.sending : t.contact.send} <span>↗</span>
               </button>
               {formState === 'success' && <p className="form-message success">{t.contact.success}</p>}
@@ -357,7 +459,7 @@ function App() {
       {selected && (
         <div className="modal-backdrop" onClick={() => setSelected(null)}>
           <div
-            className="modal"
+            className={`modal ${selected.category === 'Design' ? 'design-modal' : ''}`}
             style={{ boxShadow: `8px 8px 0 ${selected.fallbackColor}` }}
             onClick={(event) => event.stopPropagation()}
           >
@@ -370,31 +472,33 @@ function App() {
             </button>
             <img
               src={selected.image}
-              alt={`${selected.title} gallery`}
+              alt={`${selected.category === 'Development' ? selected.title : 'Design'} gallery`}
               style={{ backgroundColor: selected.fallbackColor }}
               onError={(event) => { event.currentTarget.style.opacity = '0' }}
             />
-            <span className="category-badge">
-              {selected.category === 'Development' ? t.projects.development : selected.category}
-            </span>
-            <h2>{selected.title}</h2>
-            <p>{selected.description[language]}</p>
-            <div className="modal-facts">
-              <span>
-                <b>{t.modal.role}</b>
-                {selected.role[language]}
+            {selected.category !== 'Design' && <>
+              <span className="category-badge">
+                {t.projects.development}
               </span>
-              <span>
-                <b>{t.modal.year}</b>
-                {selected.year}
-              </span>
-              <span>
-                <b>Stack</b>
-                {selected.tech.join(' • ')}
-              </span>
-            </div>
-            {(selected.url || selected.github) && (
-              <a className="button secondary" href={selected.url || selected.github} target="_blank" rel="noreferrer">
+              <h2>{selected.title}</h2>
+              <p>{selected.description[language]}</p>
+              <div className="modal-facts">
+                <span>
+                  <b>{t.modal.role}</b>
+                  {selected.role[language]}
+                </span>
+                <span>
+                  <b>{t.modal.year}</b>
+                  {selected.year}
+                </span>
+                <span>
+                  <b>Stack</b>
+                  {selected.tech.join(' • ')}
+                </span>
+              </div>
+            </>}
+            {(selected.url || (selected.category === 'Development' && selected.github)) && (
+              <a className="button secondary" href={selected.url || (selected.category === 'Development' ? selected.github : undefined)} target="_blank" rel="noreferrer">
                 {selected.url ? t.projects.url : t.projects.github} ↗
               </a>
             )}
