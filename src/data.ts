@@ -453,3 +453,13 @@ export const projects: Project[] = [
 ]
 
 export type Translations = typeof translations.id
+
+export const twibbonConfig = {
+    title: 'Buat Twibbon Kamu',
+    subtitle: 'Upload foto kamu, sesuaikan posisinya, dan buat twibbon kamu sendiri dalam beberapa langkah.',
+    eyebrow: '05 / CREATIVE TOOL',
+    templatePath: '/images/twibbon.png',
+    captionTemplate: 'Saya ikut meramaikan acara ini!\n\n#Twibbon #Kreatif #Bersama',
+    outputFileName: 'twibbon-karya.png',
+    instagramPostUrl: 'https://www.instagram.com/create/select/',
+} as const

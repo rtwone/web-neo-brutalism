@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CSSProperties, FormEvent } from 'react'
-import { projects, skills, translations } from './data'
+import { projects, skills, translations, twibbonConfig } from './data'
 import type { Language, Project, ProjectCategory } from './data'
 import './App.css'
 
 type ContactIconName = 'mail' | 'github' | 'instagram' | 'linkedin'
-
-const TWIBBON_CAPTION = 'Saya ikut meramaikan acara ini!\n\n#Twibbon #Kreatif #Bersama'
 
 function TwibbonPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -17,7 +15,7 @@ function TwibbonPage() {
   const [fileName, setFileName] = useState('')
   const [zoom, setZoom] = useState(1)
   const [position, setPosition] = useState({ x: 0, y: 0 })
-  const [caption, setCaption] = useState(TWIBBON_CAPTION)
+  const [caption, setCaption] = useState<string>(twibbonConfig.captionTemplate)
   const [feedback, setFeedback] = useState('')
   const [actionError, setActionError] = useState<'download' | 'instagram' | null>(null)
   const renderCanvasRef = useRef<() => void>(() => { })
@@ -56,7 +54,7 @@ function TwibbonPage() {
       templateRef.current = template
       renderCanvasRef.current()
     }
-    template.src = '/images/twibbon.png'
+    template.src = twibbonConfig.templatePath
   }, [])
 
   useEffect(() => {
@@ -156,7 +154,7 @@ function TwibbonPage() {
     if (!blob) return
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
-    link.download = 'twibbon-karya.png'
+    link.download = twibbonConfig.outputFileName
     link.click()
     URL.revokeObjectURL(link.href)
     setFeedback('Twibbon berhasil dibuat dan diunduh.')
@@ -167,12 +165,12 @@ function TwibbonPage() {
       rejectAction('instagram')
       return
     }
-    const instagramWindow = window.open('https://www.instagram.com/create/select/', '_blank', 'noopener,noreferrer')
+    const instagramWindow = window.open(twibbonConfig.instagramPostUrl, '_blank', 'noopener,noreferrer')
     const blob = await canvasBlob()
     if (!blob) return
     await navigator.clipboard?.writeText(caption)
     await download()
-    if (!instagramWindow) window.location.assign('https://www.instagram.com/create/select/')
+    if (!instagramWindow) window.location.assign(twibbonConfig.instagramPostUrl)
     setFeedback('Twibbon diunduh dan caption disalin. Tinggal posting di Instagram.')
   }
 
@@ -186,9 +184,9 @@ function TwibbonPage() {
       )}
       <section className="twibbon-hero">
         <div>
-          <span className="eyebrow">05 / CREATIVE TOOL</span>
-          <h1>Buat Twibbon Kamu <i>✦</i></h1>
-          <p>Upload foto kamu, sesuaikan posisinya, dan buat twibbon kamu sendiri dalam beberapa langkah.</p>
+          <span className="eyebrow">{twibbonConfig.eyebrow}</span>
+          <h1>{twibbonConfig.title} <i>✦</i></h1>
+          <p>{twibbonConfig.subtitle}</p>
         </div>
         <div className="twibbon-hero-sticker" aria-hidden="true">MAKE<br />IT<br /><b>YOURS</b></div>
       </section>
