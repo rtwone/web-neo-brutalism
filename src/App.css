@@ -421,6 +421,11 @@ footer a:hover {
   box-shadow: var(--shadow);
 }
 
+.button:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
 .shake-error {
   animation: validation-shake .35s ease-in-out;
 }

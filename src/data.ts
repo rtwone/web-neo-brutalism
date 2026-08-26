@@ -461,5 +461,5 @@ export const twibbonConfig = {
     templatePath: '/images/twibbon.png',
     captionTemplate: 'Saya ikut meramaikan acara ini!\n\n#Twibbon #Kreatif #Bersama',
     outputFileName: 'twibbon-karya.png',
-    instagramPostUrl: 'https://www.instagram.com/create/select/',
+    instagramPostUrl: 'https://www.instagram.com/',
 } as const

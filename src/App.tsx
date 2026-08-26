@@ -18,6 +18,7 @@ function TwibbonPage() {
   const [caption, setCaption] = useState<string>(twibbonConfig.captionTemplate)
   const [feedback, setFeedback] = useState('')
   const [actionError, setActionError] = useState<'download' | 'instagram' | null>(null)
+  const [isPosting, setIsPosting] = useState(false)
   const renderCanvasRef = useRef<() => void>(() => { })
 
   const renderCanvas = useCallback(() => {
@@ -136,7 +137,45 @@ function TwibbonPage() {
 
   const endDrag = () => { dragRef.current.active = false }
 
-  const canvasBlob = () => new Promise<Blob | null>((resolve) => canvasRef.current?.toBlob(resolve, 'image/png', 1))
+  const canvasBlob = () => new Promise<Blob | null>((resolve) => {
+    const canvas = canvasRef.current
+    if (!canvas) {
+      resolve(null)
+      return
+    }
+    canvas.toBlob(resolve, 'image/png', 1)
+  })
+
+  const copyCaption = async (value: string) => {
+    try {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(value)
+        return true
+      }
+      const textarea = document.createElement('textarea')
+      textarea.value = value
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      textarea.remove()
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  const downloadImage = (blob: Blob) => {
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = twibbonConfig.outputFileName
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }
 
   const rejectAction = (action: 'download' | 'instagram') => {
     setFeedback('Upload foto terlebih dahulu sebelum melanjutkan.')
@@ -151,12 +190,11 @@ function TwibbonPage() {
       return
     }
     const blob = await canvasBlob()
-    if (!blob) return
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(blob)
-    link.download = twibbonConfig.outputFileName
-    link.click()
-    URL.revokeObjectURL(link.href)
+    if (!blob) {
+      setFeedback('Gagal membuat twibbon. Silakan coba lagi.')
+      return
+    }
+    downloadImage(blob)
     setFeedback('Twibbon berhasil dibuat dan diunduh.')
   }
 
@@ -165,13 +203,42 @@ function TwibbonPage() {
       rejectAction('instagram')
       return
     }
-    const instagramWindow = window.open(twibbonConfig.instagramPostUrl, '_blank', 'noopener,noreferrer')
-    const blob = await canvasBlob()
-    if (!blob) return
-    await navigator.clipboard?.writeText(caption)
-    await download()
-    if (!instagramWindow) window.location.assign(twibbonConfig.instagramPostUrl)
-    setFeedback('Twibbon diunduh dan caption disalin. Tinggal posting di Instagram.')
+    setIsPosting(true)
+    try {
+      const blob = await canvasBlob()
+      if (!blob) {
+        setFeedback('Gagal membuat twibbon. Silakan coba lagi.')
+        return
+      }
+      const file = new File([blob], twibbonConfig.outputFileName, {
+        type: 'image/png',
+        lastModified: Date.now(),
+      })
+      const canShareFile = typeof navigator.share === 'function'
+        && typeof navigator.canShare === 'function'
+        && navigator.canShare({ files: [file] })
+
+      if (canShareFile) {
+        try {
+          await navigator.share({ files: [file], text: caption })
+          setFeedback('Pilih Instagram pada menu share untuk melanjutkan posting.')
+        } catch (error) {
+          if ((error as DOMException).name !== 'AbortError') {
+            setFeedback('Terjadi kesalahan saat membagikan twibbon. Silakan coba lagi.')
+          }
+        }
+        return
+      }
+
+      await copyCaption(caption)
+      downloadImage(blob)
+      window.open(twibbonConfig.instagramPostUrl, '_blank', 'noopener,noreferrer')
+      setFeedback('Twibbon berhasil diunduh dan caption telah disalin. Silakan posting ke Instagram.')
+    } catch {
+      setFeedback('Terjadi kesalahan saat membuat twibbon. Silakan coba lagi.')
+    } finally {
+      setIsPosting(false)
+    }
   }
 
   return (
@@ -229,13 +296,13 @@ function TwibbonPage() {
         <div className="twibbon-section-label"><span>03</span><h2>Caption Template</h2></div>
         <div className="caption-card">
           <textarea aria-label="Caption twibbon" value={caption} onChange={(event) => setCaption(event.target.value)} rows={5} />
-          <button type="button" className="button secondary" onClick={async () => { await navigator.clipboard?.writeText(caption); setFeedback('Caption berhasil disalin.') }}>Copy Caption <span>↗</span></button>
+          <button type="button" className="button secondary" onClick={async () => { const copied = await copyCaption(caption); setFeedback(copied ? 'Caption berhasil disalin.' : 'Caption gagal disalin, silakan salin manual.') }}>Copy Caption <span>↗</span></button>
         </div>
       </section>
 
       <section className="twibbon-actions" aria-label="Twibbon actions">
         <div><span className="eyebrow">04 / READY TO SHARE</span><p>{feedback || 'Sudah siap? Download atau bagikan hasil twibbon kamu.'}</p></div>
-        <div className="twibbon-action-buttons"><button type="button" className={`button primary ${actionError === 'download' ? 'shake-error' : ''}`} onClick={download}>Download Twibbon <span>↓</span></button><button type="button" className={`button instagram-button ${actionError === 'instagram' ? 'shake-error' : ''}`} onClick={shareToInstagram}>Post ke Instagram <span>↗</span></button></div>
+        <div className="twibbon-action-buttons"><button type="button" className={`button primary ${actionError === 'download' ? 'shake-error' : ''}`} onClick={download} disabled={isPosting}>Download Twibbon <span>↓</span></button><button type="button" className={`button instagram-button ${actionError === 'instagram' ? 'shake-error' : ''}`} onClick={shareToInstagram} disabled={isPosting}>{isPosting ? 'Menyiapkan...' : 'Post ke Instagram'} <span>↗</span></button></div>
       </section>
     </main>
   )
