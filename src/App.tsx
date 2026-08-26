@@ -15,11 +15,28 @@ function TwibbonPage() {
   const [fileName, setFileName] = useState('')
   const [zoom, setZoom] = useState(1)
   const [position, setPosition] = useState({ x: 0, y: 0 })
-  const [caption, setCaption] = useState<string>(twibbonConfig.captionTemplate)
+  const [caption] = useState<string>(twibbonConfig.captionTemplate)
+  const [captionFields, setCaptionFields] = useState<Record<string, string>>({})
   const [feedback, setFeedback] = useState('')
-  const [actionError, setActionError] = useState<'download' | 'instagram' | null>(null)
+  const [actionError, setActionError] = useState<'download' | 'instagram' | 'copy' | null>(null)
   const [isPosting, setIsPosting] = useState(false)
+  const [captionPopupOpen, setCaptionPopupOpen] = useState(false)
   const renderCanvasRef = useRef<() => void>(() => { })
+  const placeholderNames = Array.from(new Set(
+    Array.from(caption.matchAll(/\{([^{}]+)\}/g), ([, name]) => name.trim()).filter(Boolean),
+  ))
+  const resolvedCaption = caption.replace(/\{([^{}]+)\}/g, (_match, name: string) => {
+    const key = name.trim()
+    return captionFields[key] || `{${name}}`
+  })
+  const hasEmptyCaptionField = placeholderNames.some((name) => !captionFields[name]?.trim())
+  const captionParts = caption.split(/(\{[^{}]+\})/g)
+  const formattedCaption = captionParts.map((part, index) => {
+    const placeholder = part.match(/^\{([^{}]+)\}$/)
+    if (!placeholder) return <span key={`${part}-${index}`}>{part}</span>
+    const key = placeholder[1].trim()
+    return <strong key={`${part}-${index}`}>{captionFields[key] || part}</strong>
+  })
 
   const renderCanvas = useCallback(() => {
     const canvas = canvasRef.current
@@ -184,6 +201,22 @@ function TwibbonPage() {
     window.setTimeout(() => setActionError(null), 450)
   }
 
+  const rejectCaptionCopy = () => {
+    setFeedback('Lengkapi semua field caption terlebih dahulu.')
+    setActionError(null)
+    requestAnimationFrame(() => setActionError('copy'))
+    window.setTimeout(() => setActionError(null), 450)
+  }
+
+  const copyResolvedCaption = async () => {
+    if (hasEmptyCaptionField) {
+      rejectCaptionCopy()
+      return
+    }
+    const copied = await copyCaption(resolvedCaption)
+    setFeedback(copied ? 'Caption berhasil disalin.' : 'Caption gagal disalin, silakan salin manual.')
+  }
+
   const download = async () => {
     if (!photoUrl) {
       rejectAction('download')
@@ -220,7 +253,7 @@ function TwibbonPage() {
 
       if (canShareFile) {
         try {
-          await navigator.share({ files: [file], text: caption })
+          await navigator.share({ files: [file], text: resolvedCaption })
           setFeedback('Pilih Instagram pada menu share untuk melanjutkan posting.')
         } catch (error) {
           if ((error as DOMException).name !== 'AbortError') {
@@ -230,7 +263,7 @@ function TwibbonPage() {
         return
       }
 
-      await copyCaption(caption)
+      await copyCaption(resolvedCaption)
       downloadImage(blob)
       window.open(twibbonConfig.instagramPostUrl, '_blank', 'noopener,noreferrer')
       setFeedback('Twibbon berhasil diunduh dan caption telah disalin. Silakan posting ke Instagram.')
@@ -295,8 +328,25 @@ function TwibbonPage() {
       <section className="twibbon-caption-section">
         <div className="twibbon-section-label"><span>03</span><h2>Caption Template</h2></div>
         <div className="caption-card">
-          <textarea aria-label="Caption twibbon" value={caption} onChange={(event) => setCaption(event.target.value)} rows={5} />
-          <button type="button" className="button secondary" onClick={async () => { const copied = await copyCaption(caption); setFeedback(copied ? 'Caption berhasil disalin.' : 'Caption gagal disalin, silakan salin manual.') }}>Copy Caption <span>↗</span></button>
+          <div className="caption-preview" role="button" tabIndex={0} aria-label="Buka caption lengkap" onClick={() => setCaptionPopupOpen(true)} onKeyDown={(event) => event.key === 'Enter' && setCaptionPopupOpen(true)}>{formattedCaption}</div>
+          <p className="caption-help">Isi field di bawah untuk mengganti placeholder pada caption. Teks caption akan berubah otomatis.</p>
+          {placeholderNames.length > 0 && (
+            <div className="caption-fields" aria-label="Data caption">
+              {placeholderNames.map((name) => (
+                <label className="caption-field" key={name}>
+                  <span>{`Isi ${name}`}</span>
+                  <input
+                    type="text"
+                    required
+                    value={captionFields[name] || ''}
+                    placeholder={`Masukkan ${name}`}
+                    onChange={(event) => setCaptionFields((fields) => ({ ...fields, [name]: event.target.value }))}
+                  />
+                </label>
+              ))}
+            </div>
+          )}
+          <button type="button" className={`button secondary caption-copy-button ${hasEmptyCaptionField ? 'is-disabled' : ''} ${actionError === 'copy' ? 'shake-error' : ''}`} data-disabled={hasEmptyCaptionField} onClick={copyResolvedCaption}>Copy Caption <span>↗</span></button>
         </div>
       </section>
 
@@ -304,6 +354,17 @@ function TwibbonPage() {
         <div><span className="eyebrow">04 / READY TO SHARE</span><p>{feedback || 'Sudah siap? Download atau bagikan hasil twibbon kamu.'}</p></div>
         <div className="twibbon-action-buttons"><button type="button" className={`button primary ${actionError === 'download' ? 'shake-error' : ''}`} onClick={download} disabled={isPosting}>Download Twibbon <span>↓</span></button><button type="button" className={`button instagram-button ${actionError === 'instagram' ? 'shake-error' : ''}`} onClick={shareToInstagram} disabled={isPosting}>{isPosting ? 'Menyiapkan...' : 'Post ke Instagram'} <span>↗</span></button></div>
       </section>
+      {captionPopupOpen && (
+        <div className="caption-popup-backdrop" role="presentation" onClick={() => setCaptionPopupOpen(false)}>
+          <section className="caption-popup" role="dialog" aria-modal="true" aria-labelledby="caption-popup-title" onClick={(event) => event.stopPropagation()}>
+            <button type="button" className="caption-popup-close" aria-label="Tutup caption" onClick={() => setCaptionPopupOpen(false)}>×</button>
+            <span className="eyebrow">FULL CAPTION</span>
+            <h2 id="caption-popup-title">Caption siap pakai</h2>
+            <div className="caption-popup-text">{formattedCaption}</div>
+            <button type="button" className={`button primary ${hasEmptyCaptionField ? 'is-disabled' : ''} ${actionError === 'copy' ? 'shake-error' : ''}`} onClick={copyResolvedCaption}>Copy Caption <span>↗</span></button>
+          </section>
+        </div>
+      )}
     </main>
   )
 }

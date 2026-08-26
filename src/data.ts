@@ -459,7 +459,7 @@ export const twibbonConfig = {
     subtitle: 'Upload foto kamu, sesuaikan posisinya, dan buat twibbon kamu sendiri dalam beberapa langkah.',
     eyebrow: '05 / CREATIVE TOOL',
     templatePath: '/images/twibbon.png',
-    captionTemplate: 'Saya ikut meramaikan acara ini!\n\n#Twibbon #Kreatif #Bersama',
+    captionTemplate: 'Template Caption untuk Testing {nama} dan {keterangan}',
     outputFileName: 'twibbon-karya.png',
     instagramPostUrl: 'https://www.instagram.com/',
 } as const
