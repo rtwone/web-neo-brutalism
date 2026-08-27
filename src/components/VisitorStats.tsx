@@ -95,25 +95,28 @@ export function VisitorStats() {
     }
 
     return (
-        <section className="visitor-stats" aria-label="Visitor stats">
-            <div className="visitor-stat visitor-like-stat">
-                <button type="button" className={`visitor-like-button ${stats.isLiked ? 'liked' : ''}`} onClick={like} disabled={liking || stats.isLiked} aria-pressed={stats.isLiked}>
-                    <span aria-hidden="true">♥</span>
-                    <strong>{loading ? '—' : stats.likes}</strong>
-                    <small>{stats.isLiked ? 'Liked' : 'Likes'}</small>
-                </button>
-            </div>
-            <div className="visitor-stat">
-                <span className="visitor-stat-icon" aria-hidden="true">◉</span>
-                <strong>{loading ? '—' : stats.views}</strong>
-                <small>Views</small>
-            </div>
-            <div className="visitor-stat visitor-away-stat">
-                <span className={`away-dot ${stats.isAway ? 'away' : ''}`} aria-hidden="true" />
-                <strong>{stats.isAway ? 'Away' : 'Online'}</strong>
-                <small>Status</small>
-            </div>
-            {error && <span className="visitor-stats-error" role="status">{error}</span>}
-        </section>
+        <div className="visitor-stats-wrap">
+            <section className="visitor-stats" aria-label="Visitor stats">
+                <div className="visitor-stat visitor-like-stat">
+                    <button type="button" className={`visitor-like-button ${stats.isLiked ? 'liked' : ''}`} onClick={like} disabled={liking || stats.isLiked} aria-pressed={stats.isLiked}>
+                        <span aria-hidden="true">{stats.isLiked ? '♥' : '♡'}</span>
+                        <strong>{loading ? '—' : stats.likes}</strong>
+                        <small>{stats.isLiked ? 'Liked' : 'Likes'}</small>
+                    </button>
+                </div>
+                <div className="visitor-stat">
+                    <span className="visitor-stat-icon" aria-hidden="true">◉</span>
+                    <strong>{loading ? '—' : stats.views}</strong>
+                    <small>Views</small>
+                </div>
+                <div className="visitor-stat visitor-away-stat">
+                    <span className={`away-dot ${stats.isAway ? 'away' : ''}`} aria-hidden="true" />
+                    <strong>{stats.isAway ? 'Away' : 'Online'}</strong>
+                    <small>Status</small>
+                </div>
+                {error && <span className="visitor-stats-error" role="status">{error}</span>}
+            </section>
+            <p className="visitor-stats-hint">Mungkin kamu suka dengan Web ini? Kasih satu love, dong!</p>
+        </div>
     )
 }
