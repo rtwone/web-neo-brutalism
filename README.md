@@ -12,6 +12,17 @@ CONTACT_TO_EMAIL=your-verified-email@example.com
 
 Use a verified Resend domain for `RESEND_FROM_EMAIL` in production. Never expose `RESEND_API_KEY` in frontend code or commit it to the repository.
 
+## Neon configuration
+
+The frontend Neon endpoints are configured with:
+
+```text
+VITE_NEON_DATA_API_URL=https://ep-solitary-cloud-az9ut7o0.apirest.c-3.ap-southeast-1.aws.neon.tech/neondb/rest/v1
+VITE_NEON_AUTH_URL=https://ep-solitary-cloud-az9ut7o0.neonauth.c-3.ap-southeast-1.aws.neon.tech/neondb/auth
+```
+
+These URLs are public client configuration values. Database credentials, service-role tokens, IP hash secrets, and anti-spam operations must remain server-side.
+
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
 Currently, two official plugins are available:

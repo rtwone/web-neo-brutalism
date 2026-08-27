@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CSSProperties, FormEvent } from 'react'
 import { projects, skills, translations, twibbonConfig } from './data'
 import type { Language, Project, ProjectCategory } from './data'
+import { VisitorStats } from './components/VisitorStats'
 import './App.css'
 
 type ContactIconName = 'mail' | 'github' | 'instagram' | 'linkedin'
@@ -729,6 +730,7 @@ function App() {
                 <a className="text-link" href="#contact">
                   {t.about.cta} <span>↗</span>
                 </a>
+                <VisitorStats />
               </div>
             </div>
           </section>
