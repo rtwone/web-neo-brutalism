@@ -1,6 +1,20 @@
 import { useEffect, useState } from 'react'
 
 const page = '/'
+const visitorStorageKey = 'visitor_id'
+
+const getVisitorId = () => {
+    const existingId = window.localStorage.getItem(visitorStorageKey)
+    if (existingId) return existingId
+    const visitorId = crypto.randomUUID()
+    window.localStorage.setItem(visitorStorageKey, visitorId)
+    return visitorId
+}
+
+const statsRequest = (url: string, options: RequestInit = {}) => fetch(url, {
+    ...options,
+    headers: { ...options.headers, 'x-visitor-id': getVisitorId() },
+})
 
 type Stats = {
     likes: number
@@ -21,7 +35,7 @@ export function VisitorStats() {
         let active = true
         const loadStats = async () => {
             try {
-                const response = await fetch(`/api/stats?page=${encodeURIComponent(page)}`)
+                const response = await statsRequest(`/api/stats?page=${encodeURIComponent(page)}`)
                 if (!response.ok) throw new Error('Stats unavailable')
                 const data = await response.json() as Stats & { success: boolean }
                 if (active && data.success) setStats(data)
@@ -40,7 +54,7 @@ export function VisitorStats() {
     useEffect(() => {
         const recordView = async () => {
             try {
-                const response = await fetch(`/api/stats/view?page=${encodeURIComponent(page)}`, { method: 'POST' })
+                const response = await statsRequest(`/api/stats/view?page=${encodeURIComponent(page)}`, { method: 'POST' })
                 if (!response.ok) return
                 const data = await response.json() as Stats & { success: boolean }
                 if (data.success) setStats(data)
@@ -61,7 +75,7 @@ export function VisitorStats() {
         setError('')
         setStats((current) => ({ ...current, likes: current.likes + 1, isLiked: true }))
         try {
-            const response = await fetch(`/api/stats/like?page=${encodeURIComponent(page)}`, { method: 'POST' })
+            const response = await statsRequest(`/api/stats/like?page=${encodeURIComponent(page)}`, { method: 'POST' })
             const data = await response.json() as Stats & { success: boolean; error?: string }
             if (!response.ok || !data.success) throw new Error(data.error || 'Like failed')
             setStats(data)
