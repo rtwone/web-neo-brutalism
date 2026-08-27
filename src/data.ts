@@ -11,7 +11,7 @@ export const translations = {
         },
         hero: {
             eyebrow: 'AVAILABLE FOR COLLABORATION',
-            title: 'Halo, saya Irfan Hariyanto.',
+            title: 'Hi, saya Irfan Hariyanto.',
             role: 'Desainer Grafis | Spesialis Media Sosial | Pemrogram Pemula | Penggemar AI | Mahasiswa Aktif',
             description: 'Saya suka belajar dan membuat berbagai hal, terutama hal-hal baru yang menggabungkan teknologi, desain, dan kreativitas.',
             projects: 'Lihat proyek saya',
