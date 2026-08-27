@@ -26,11 +26,11 @@ const isUuid = (value: string | null | undefined): value is string =>
     Boolean(value && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value))
 
 export const getVisitorId = (request: RequestLike, response: ResponseLike) => {
-    const existingId = parseCookie(request, COOKIE_NAME)
-    if (isUuid(existingId)) return existingId
-
     const headerId = headerValue(request, 'x-visitor-id') || headerValue(request, 'X-Visitor-Id')
     if (isUuid(headerId)) return headerId
+
+    const existingId = parseCookie(request, COOKIE_NAME)
+    if (isUuid(existingId)) return existingId
 
     const visitorId = randomUUID()
     const secure = process.env.NODE_ENV === 'production' ? '; Secure' : ''
