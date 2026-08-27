@@ -76,11 +76,11 @@ export const recordView = async (visitorId: string, requestedPage: unknown, ipHa
     await ensurePage(page)
     await getSql()`
         WITH locked AS (
-            SELECT pg_advisory_xact_lock(hashtextextended(${`${visitorId}:${page}`}, 0))
+            SELECT pg_advisory_xact_lock(hashtextextended(${`${ipHash}:${page}`}, 0))
         ), eligible AS (
             SELECT NOT EXISTS (
                 SELECT 1 FROM page_views
-                WHERE visitor_id = ${visitorId}::uuid
+                                WHERE (visitor_id = ${visitorId}::uuid OR ip_hash = ${ipHash})
                   AND page = ${page}
                   AND created_at > NOW() - (${dedupMinutes} * INTERVAL '1 minute')
             ) AS should_count

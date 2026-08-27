@@ -4,6 +4,7 @@ import { getStats, recordLike, recordView } from '../lib/stats.js'
 
 export type VercelRequest = {
     method?: string
+    url?: string
     body?: Record<string, unknown>
     headers?: Record<string, string | string[] | undefined>
     query?: Record<string, string | string[] | undefined>
@@ -31,7 +32,12 @@ const responseBody = (stats: Awaited<ReturnType<typeof getStats>>) => ({
 })
 
 export default async function handler(request: VercelRequest, response: VercelResponse) {
-    const action = request.query?.action
+    const pathAction = request.url?.split('?')[0].endsWith('/like')
+        ? 'like'
+        : request.url?.split('?')[0].endsWith('/view')
+            ? 'view'
+            : undefined
+    const action = request.query?.action || pathAction
     const actionName = Array.isArray(action) ? action[0] : action
     if (!['GET', 'POST'].includes(request.method || '')) return fail(response, 405, 'Method not allowed')
 
