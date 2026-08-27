@@ -37,7 +37,6 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
     try {
         const { ip, userAgent } = getRequestSignals(request)
-        if (!userAgent) return fail(response, 400, 'Invalid request')
         const ipHash = hashSignal(ip)
         const visitorId = getVisitorId(request, response)
         const page = pageFromRequest(request)
@@ -58,7 +57,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
         const stats = actionName === 'like'
             ? await recordLike(visitorId, ipHash, page)
-            : await recordView(visitorId, page, ipHash, hashSignal(userAgent))
+            : await recordView(visitorId, page, ipHash, hashSignal(userAgent || 'unknown'))
         return response.status(200).json(responseBody(stats))
     } catch {
         return fail(response, 500, 'Stats service unavailable')
