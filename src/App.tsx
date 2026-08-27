@@ -553,8 +553,10 @@ function App() {
     <div className="site-shell">
       <header className="navbar">
         <div className="nav-brand">
-          <a className="brand" href="/">IH<span>.</span></a>
-          <span className="nav-brand-text">Portofolio<br />Irfan Hariyanto</span>
+          <a className="nav-brand-link" href="/">
+            <span className="brand">IH<span>.</span></span>
+            <span className="nav-brand-text">Portofolio<br />Irfan Hariyanto</span>
+          </a>
         </div>
         <button
           className="menu-button"

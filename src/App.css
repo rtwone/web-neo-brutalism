@@ -244,6 +244,10 @@ button {
 }
 
 .nav-brand {
+  display: block;
+}
+
+.nav-brand-link {
   display: flex;
   align-items: center;
   gap: 12px;
