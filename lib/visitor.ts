@@ -4,6 +4,7 @@ const COOKIE_NAME = 'visitor_id'
 const COOKIE_MAX_AGE = 31536000
 
 export type RequestLike = {
+    query?: Record<string, string | string[] | undefined>
     headers?: Record<string, string | string[] | undefined>
 }
 
@@ -13,6 +14,11 @@ export type ResponseLike = {
 
 const headerValue = (request: RequestLike, name: string) => {
     const value = request.headers?.[name]
+    return Array.isArray(value) ? value[0] : value
+}
+
+const queryValue = (request: RequestLike, name: string) => {
+    const value = request.query?.[name]
     return Array.isArray(value) ? value[0] : value
 }
 
@@ -26,8 +32,10 @@ const isUuid = (value: string | null | undefined): value is string =>
     Boolean(value && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value))
 
 export const getVisitorId = (request: RequestLike, response: ResponseLike) => {
-    const headerId = headerValue(request, 'x-visitor-id') || headerValue(request, 'X-Visitor-Id')
-    if (isUuid(headerId)) return headerId
+    const requestedId = queryValue(request, 'visitor_id')
+        || headerValue(request, 'x-visitor-id')
+        || headerValue(request, 'X-Visitor-Id')
+    if (isUuid(requestedId)) return requestedId
 
     const existingId = parseCookie(request, COOKIE_NAME)
     if (isUuid(existingId)) return existingId
