@@ -22,7 +22,7 @@ const ensureVisitor = async (visitorId: string) => {
     `
 }
 
-const readStats = async (page: string, visitorId: string, ipHash: string): Promise<StatsResult> => {
+const readStats = async (page: string, visitorId: string): Promise<StatsResult> => {
     const rows = await getSql()`
         SELECT
             stats.likes::int,
@@ -30,7 +30,7 @@ const readStats = async (page: string, visitorId: string, ipHash: string): Promi
             stats.is_away,
             EXISTS (
                 SELECT 1 FROM visitor_likes
-                WHERE (visitor_id = ${visitorId}::uuid OR ip_hash = ${ipHash}) AND page = ${page}
+                WHERE visitor_id = ${visitorId}::uuid AND page = ${page}
             ) AS is_liked
         FROM site_stats stats
         WHERE stats.page = ${page}
@@ -44,11 +44,11 @@ const readStats = async (page: string, visitorId: string, ipHash: string): Promi
     }
 }
 
-export const getStats = async (visitorId: string, ipHash: string, requestedPage: unknown) => {
+export const getStats = async (visitorId: string, requestedPage: unknown) => {
     const page = pageName(requestedPage)
     await ensureVisitor(visitorId)
     await ensurePage(page)
-    return readStats(page, visitorId, ipHash)
+    return readStats(page, visitorId)
 }
 
 export const recordLike = async (visitorId: string, ipHash: string, requestedPage: unknown) => {
@@ -66,7 +66,7 @@ export const recordLike = async (visitorId: string, ipHash: string, requestedPag
         SET likes = likes + (SELECT COUNT(*) FROM inserted), updated_at = NOW()
         WHERE site_stats.page = ${page}
     `
-    return readStats(page, visitorId, ipHash)
+    return readStats(page, visitorId)
 }
 
 export const recordView = async (visitorId: string, requestedPage: unknown, ipHash: string, userAgentHash: string) => {
@@ -76,11 +76,11 @@ export const recordView = async (visitorId: string, requestedPage: unknown, ipHa
     await ensurePage(page)
     await getSql()`
         WITH locked AS (
-            SELECT pg_advisory_xact_lock(hashtextextended(${`${ipHash}:${page}`}, 0))
+            SELECT pg_advisory_xact_lock(hashtextextended(${`${visitorId}:${page}`}, 0))
         ), eligible AS (
             SELECT NOT EXISTS (
                 SELECT 1 FROM page_views
-                                WHERE (visitor_id = ${visitorId}::uuid OR ip_hash = ${ipHash})
+                WHERE visitor_id = ${visitorId}::uuid
                   AND page = ${page}
                   AND created_at > NOW() - (${dedupMinutes} * INTERVAL '1 minute')
             ) AS should_count
@@ -96,5 +96,5 @@ export const recordView = async (visitorId: string, requestedPage: unknown, ipHa
         SET views = views + (SELECT COUNT(*) FROM inserted), updated_at = NOW()
         WHERE site_stats.page = ${page}
     `
-    return readStats(page, visitorId, ipHash)
+    return readStats(page, visitorId)
 }

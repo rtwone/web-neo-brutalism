@@ -48,7 +48,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
         const page = pageFromRequest(request)
 
         if (request.method === 'GET') {
-            const stats = await getStats(visitorId, ipHash, page)
+            const stats = await getStats(visitorId, page)
             return response.status(200).json(responseBody(stats))
         }
 

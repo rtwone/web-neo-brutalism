@@ -23,8 +23,7 @@ CREATE TABLE IF NOT EXISTS visitor_likes (
 
 ALTER TABLE visitor_likes ADD COLUMN IF NOT EXISTS ip_hash VARCHAR(64);
 
-CREATE UNIQUE INDEX IF NOT EXISTS visitor_likes_ip_page_unique
-    ON visitor_likes (ip_hash, page);
+DROP INDEX IF EXISTS visitor_likes_ip_page_unique;
 
 CREATE TABLE IF NOT EXISTS page_views (
     id BIGSERIAL PRIMARY KEY,
