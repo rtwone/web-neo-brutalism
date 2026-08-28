@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS page_views (
     id BIGSERIAL PRIMARY KEY,
     visitor_id VARCHAR(255) NOT NULL REFERENCES visitors(visitor_id) ON DELETE CASCADE,
     page VARCHAR(255) NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')
 );
 
 ALTER TABLE site_stats DROP COLUMN IF EXISTS is_away;
@@ -33,6 +33,10 @@ ALTER TABLE visitor_likes DROP COLUMN IF EXISTS created_at;
 ALTER TABLE page_views DROP COLUMN IF EXISTS ip_hash;
 ALTER TABLE page_views DROP COLUMN IF EXISTS user_agent_hash;
 DROP INDEX IF EXISTS visitor_likes_ip_page_unique;
+
+ALTER TABLE page_views
+    ALTER COLUMN created_at TYPE TIMESTAMP WITHOUT TIME ZONE
+    USING created_at AT TIME ZONE 'Asia/Jakarta';
 
 ALTER TABLE visitor_likes DROP CONSTRAINT IF EXISTS visitor_likes_visitor_id_fkey;
 ALTER TABLE page_views DROP CONSTRAINT IF EXISTS page_views_visitor_id_fkey;
@@ -84,7 +88,7 @@ BEGIN
         SELECT 1 FROM page_views
         WHERE visitor_id = p_visitor_id
           AND page = p_page
-          AND created_at > NOW() - (p_dedup_minutes * INTERVAL '1 minute')
+          AND created_at > (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta') - (p_dedup_minutes * INTERVAL '1 minute')
     ) THEN
         INSERT INTO page_views (visitor_id, page)
         VALUES (p_visitor_id, p_page);
