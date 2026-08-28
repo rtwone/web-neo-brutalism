@@ -1,11 +1,12 @@
-import { neon } from '@neondatabase/serverless'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-let client: ReturnType<typeof neon> | null = null
+let client: SupabaseClient | null = null
 
-export const getSql = () => {
+export const getSupabase = () => {
     if (client) return client
-    const databaseUrl = process.env.DATABASE_URL
-    if (!databaseUrl) throw new Error('DATABASE_URL is not configured')
-    client = neon(databaseUrl)
+    const url = process.env.SUPABASE_URL
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!url || !serviceRoleKey) throw new Error('Supabase environment variables are not configured')
+    client = createClient(url, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } })
     return client
 }

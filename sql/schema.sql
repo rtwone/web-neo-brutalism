@@ -51,3 +51,50 @@ CREATE INDEX IF NOT EXISTS page_views_page_created_idx
     ON page_views (page, created_at DESC);
 
 INSERT INTO site_stats (page) VALUES ('/') ON CONFLICT (page) DO NOTHING;
+
+CREATE OR REPLACE FUNCTION record_like(p_visitor_id VARCHAR, p_page VARCHAR)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    INSERT INTO visitor_likes (visitor_id, page)
+    VALUES (p_visitor_id, p_page)
+    ON CONFLICT (visitor_id, page) DO NOTHING;
+
+    IF FOUND THEN
+        UPDATE site_stats
+        SET likes = likes + 1
+        WHERE page = p_page;
+    END IF;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION record_view(p_visitor_id VARCHAR, p_page VARCHAR, p_dedup_minutes INTEGER)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    PERFORM pg_advisory_xact_lock(hashtextextended(p_visitor_id || ':' || p_page, 0));
+
+    IF NOT EXISTS (
+        SELECT 1 FROM page_views
+        WHERE visitor_id = p_visitor_id
+          AND page = p_page
+          AND created_at > NOW() - (p_dedup_minutes * INTERVAL '1 minute')
+    ) THEN
+        INSERT INTO page_views (visitor_id, page)
+        VALUES (p_visitor_id, p_page);
+
+        UPDATE site_stats
+        SET views = views + 1
+        WHERE page = p_page;
+    END IF;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION record_like(VARCHAR, VARCHAR) TO service_role;
+GRANT EXECUTE ON FUNCTION record_view(VARCHAR, VARCHAR, INTEGER) TO service_role;

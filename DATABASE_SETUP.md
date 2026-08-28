@@ -1,16 +1,16 @@
 # Visitor Stats Database Setup
 
-Visitor Stats uses Neon PostgreSQL through the server-only `DATABASE_URL`. The visitor identity is the real IP address received by the server.
+Visitor Stats uses Supabase PostgreSQL through the server-only `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. The visitor identity is the real IP address received by the server.
 
-## 1. Create a Neon project
+## 1. Create a Supabase project
 
-1. Open the Neon console and create a PostgreSQL project.
-2. Copy the pooled connection string from the Connect dialog.
-3. Keep the connection string private.
+1. Open the Supabase dashboard and create a project.
+2. Copy the Project URL and service role key from Project Settings > API.
+3. Keep the service role key private and server-side.
 
 ## 2. Run the schema
 
-1. Open the Neon SQL Editor.
+1. Open the Supabase SQL Editor.
 2. Open `sql/schema.sql` from this project.
 3. Run the complete file.
 
@@ -21,7 +21,8 @@ This creates `site_stats`, `visitors`, `visitor_likes`, and `page_views`, includ
 Copy `.env.example` values into your local `.env` and set:
 
 ```text
-DATABASE_URL=postgresql://...
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
 The rate-limit defaults are 5 Like requests per 60 seconds, 30 View requests per 60 seconds, and 180-minute View deduplication. They can be changed with the matching environment variables.
@@ -31,7 +32,8 @@ The rate-limit defaults are 5 Like requests per 60 seconds, 30 View requests per
 Add these server-side environment variables in the Vercel project settings for every environment that needs stats:
 
 ```text
-DATABASE_URL
+SUPABASE_URL
+SUPABASE_SERVICE_ROLE_KEY
 LIKE_RATE_LIMIT
 LIKE_RATE_WINDOW
 VIEW_RATE_LIMIT

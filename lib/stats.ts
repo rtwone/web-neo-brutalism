@@ -1,4 +1,4 @@
-import { getSql } from './db.js'
+import { getSupabase } from './db.js'
 
 export type StatsResult = {
     likes: number
@@ -9,34 +9,27 @@ export type StatsResult = {
 const pageName = (value: unknown) => typeof value === 'string' && value.length <= 255 && value.startsWith('/') ? value : '/'
 
 const ensurePage = async (page: string) => {
-    await getSql()`INSERT INTO site_stats (page) VALUES (${page}) ON CONFLICT (page) DO NOTHING`
+    const { error } = await getSupabase().from('site_stats').upsert({ page }, { onConflict: 'page', ignoreDuplicates: true })
+    if (error) throw error
 }
 
 const ensureVisitor = async (visitorId: string) => {
-    await getSql()`
-        INSERT INTO visitors (visitor_id)
-        VALUES (${visitorId})
-        ON CONFLICT (visitor_id) DO NOTHING
-    `
+    const { error } = await getSupabase().from('visitors').upsert({ visitor_id: visitorId }, { onConflict: 'visitor_id', ignoreDuplicates: true })
+    if (error) throw error
 }
 
 const readStats = async (page: string, visitorId: string): Promise<StatsResult> => {
-    const rows = await getSql()`
-        SELECT
-            stats.likes::int,
-            stats.views::int,
-            EXISTS (
-                SELECT 1 FROM visitor_likes
-                WHERE visitor_id = ${visitorId} AND page = ${page}
-            ) AS is_liked
-        FROM site_stats stats
-        WHERE stats.page = ${page}
-    ` as unknown as Array<{ likes: number; views: number; is_liked: boolean }>
-    const row = rows[0]
+    const supabase = getSupabase()
+    const [{ data: stats, error: statsError }, { count, error: likeError }] = await Promise.all([
+        supabase.from('site_stats').select('likes, views').eq('page', page).single(),
+        supabase.from('visitor_likes').select('id', { count: 'exact', head: true }).eq('visitor_id', visitorId).eq('page', page),
+    ])
+    if (statsError) throw statsError
+    if (likeError) throw likeError
     return {
-        likes: row?.likes || 0,
-        views: row?.views || 0,
-        isLiked: row?.is_liked || false,
+        likes: stats?.likes || 0,
+        views: stats?.views || 0,
+        isLiked: (count || 0) > 0,
     }
 }
 
@@ -51,17 +44,8 @@ export const recordLike = async (visitorId: string, requestedPage: unknown) => {
     const page = pageName(requestedPage)
     await ensureVisitor(visitorId)
     await ensurePage(page)
-    await getSql()`
-        WITH inserted AS (
-            INSERT INTO visitor_likes (visitor_id, page)
-            VALUES (${visitorId}, ${page})
-            ON CONFLICT DO NOTHING
-            RETURNING 1
-        )
-        UPDATE site_stats
-        SET likes = likes + (SELECT COUNT(*) FROM inserted)
-        WHERE site_stats.page = ${page}
-    `
+    const { error } = await getSupabase().rpc('record_like', { p_visitor_id: visitorId, p_page: page })
+    if (error) throw error
     return readStats(page, visitorId)
 }
 
@@ -70,27 +54,11 @@ export const recordView = async (visitorId: string, requestedPage: unknown) => {
     const dedupMinutes = Number(process.env.VIEW_DEDUP_MINUTES) > 0 ? Number(process.env.VIEW_DEDUP_MINUTES) : 180
     await ensureVisitor(visitorId)
     await ensurePage(page)
-    await getSql()`
-        WITH locked AS (
-            SELECT pg_advisory_xact_lock(hashtextextended(${`${visitorId}:${page}`}, 0))
-        ), eligible AS (
-            SELECT NOT EXISTS (
-                SELECT 1 FROM page_views
-                WHERE visitor_id = ${visitorId}
-                  AND page = ${page}
-                  AND created_at > NOW() - (${dedupMinutes} * INTERVAL '1 minute')
-            ) AS should_count
-            FROM locked
-        ), inserted AS (
-            INSERT INTO page_views (visitor_id, page)
-            SELECT ${visitorId}, ${page}
-            FROM eligible
-            WHERE should_count
-            RETURNING 1
-        )
-        UPDATE site_stats
-        SET views = views + (SELECT COUNT(*) FROM inserted)
-        WHERE site_stats.page = ${page}
-    `
+    const { error } = await getSupabase().rpc('record_view', {
+        p_visitor_id: visitorId,
+        p_page: page,
+        p_dedup_minutes: dedupMinutes,
+    })
+    if (error) throw error
     return readStats(page, visitorId)
 }
