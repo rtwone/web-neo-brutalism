@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react'
 const page = '/'
 const visitorStorageKey = 'visitor_id'
 const viewStorageKey = 'visitor_viewed_home'
+const viewTimeStorageKey = 'visitor_viewed_at_wib'
+const viewDedupMs = 3 * 60 * 60 * 1000
 
 const getVisitorId = () => {
     const existingId = window.localStorage.getItem(visitorStorageKey)
@@ -18,6 +20,22 @@ const statsRequest = (url: string, options: RequestInit = {}) => fetch(url, {
 })
 
 const statsUrl = (path: string) => `${path}&visitor_id=${encodeURIComponent(getVisitorId())}`
+
+const wibTimestamp = (date: Date) => new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Asia/Jakarta',
+    dateStyle: 'short',
+    timeStyle: 'medium',
+}).format(date)
+
+const hasRecentView = () => {
+    const viewedAt = Number(window.localStorage.getItem(viewStorageKey))
+    if (!viewedAt || Date.now() - viewedAt >= viewDedupMs) {
+        window.localStorage.removeItem(viewStorageKey)
+        window.localStorage.removeItem(viewTimeStorageKey)
+        return false
+    }
+    return true
+}
 
 type Stats = {
     likes: number
@@ -56,13 +74,14 @@ export function VisitorStats() {
 
     useEffect(() => {
         const recordView = async () => {
-            if (window.localStorage.getItem(viewStorageKey) === '1') return
+            if (hasRecentView()) return
             try {
                 const response = await statsRequest(statsUrl(`/api/stats/view?page=${encodeURIComponent(page)}`), { method: 'POST' })
                 if (!response.ok) return
                 const data = await response.json() as Stats & { success: boolean }
                 if (data.success) {
-                    window.localStorage.setItem(viewStorageKey, '1')
+                    window.localStorage.setItem(viewStorageKey, String(Date.now()))
+                    window.localStorage.setItem(viewTimeStorageKey, wibTimestamp(new Date()))
                     setStats(data)
                 }
             } catch {
