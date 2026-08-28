@@ -1,4 +1,4 @@
-import { getRequestSignals, hashVisitorIp } from '../lib/visitor.js'
+import { getRequestSignals, hashVisitorIp, requestedVisitorId } from '../lib/visitor.js'
 import { checkRateLimit } from '../lib/rate-limit.js'
 import { getStats, recordLike, recordView } from '../lib/stats.js'
 
@@ -42,7 +42,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
     try {
         const { ip } = getRequestSignals(request)
-        const visitorId = hashVisitorIp(ip)
+        const visitorId = requestedVisitorId(request) || hashVisitorIp(ip)
         const page = pageFromRequest(request)
 
         if (request.method === 'GET') {

@@ -1,13 +1,25 @@
 import { useEffect, useState } from 'react'
 
 const page = '/'
+const visitorStorageKey = 'visitor_id'
 const viewStorageKey = 'visitor_viewed_home'
 const viewTimeStorageKey = 'visitor_viewed_at_wib'
 const viewDedupMs = 3 * 60 * 60 * 1000
 
-const statsRequest = (url: string, options: RequestInit = {}) => fetch(url, options)
+const getVisitorId = () => {
+    const existingId = window.localStorage.getItem(visitorStorageKey)
+    if (existingId) return existingId
+    const visitorId = crypto.randomUUID()
+    window.localStorage.setItem(visitorStorageKey, visitorId)
+    return visitorId
+}
 
-const statsUrl = (path: string) => path
+const statsRequest = (url: string, options: RequestInit = {}) => fetch(url, {
+    ...options,
+    headers: { ...options.headers, 'x-visitor-id': getVisitorId() },
+})
+
+const statsUrl = (path: string) => `${path}&visitor_id=${encodeURIComponent(getVisitorId())}`
 
 const wibTimestamp = (date: Date) => new Intl.DateTimeFormat('sv-SE', {
     timeZone: 'Asia/Jakarta',
