@@ -21,7 +21,7 @@ SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
-Run `sql/schema.sql` in the Supabase SQL Editor. Keep `SUPABASE_SERVICE_ROLE_KEY` server-side and never prefix it with `VITE_`.
+Run `sql/schema.sql` in the Supabase SQL Editor. Keep `SUPABASE_SERVICE_ROLE_KEY` and `IP_HASH_SECRET` server-side and never prefix them with `VITE_`.
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
