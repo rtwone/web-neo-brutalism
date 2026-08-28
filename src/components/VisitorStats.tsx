@@ -23,13 +23,19 @@ const statsUrl = (path: string) => `${path}&visitor_id=${encodeURIComponent(getV
 
 const wibTimestamp = (date: Date) => new Intl.DateTimeFormat('sv-SE', {
     timeZone: 'Asia/Jakarta',
-    dateStyle: 'short',
-    timeStyle: 'medium',
-}).format(date)
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+}).format(date).replace(' ', 'T') + '+07:00'
 
 const hasRecentView = () => {
-    const viewedAt = Number(window.localStorage.getItem(viewStorageKey))
-    if (!viewedAt || Date.now() - viewedAt >= viewDedupMs) {
+    const viewedAtWib = window.localStorage.getItem(viewTimeStorageKey)
+    const viewedAt = viewedAtWib ? Date.parse(viewedAtWib) : Number.NaN
+    if (!viewedAtWib || Number.isNaN(viewedAt) || Date.now() - viewedAt >= viewDedupMs) {
         window.localStorage.removeItem(viewStorageKey)
         window.localStorage.removeItem(viewTimeStorageKey)
         return false
@@ -80,7 +86,7 @@ export function VisitorStats() {
                 if (!response.ok) return
                 const data = await response.json() as Stats & { success: boolean }
                 if (data.success) {
-                    window.localStorage.setItem(viewStorageKey, String(Date.now()))
+                    window.localStorage.setItem(viewStorageKey, '1')
                     window.localStorage.setItem(viewTimeStorageKey, wibTimestamp(new Date()))
                     setStats(data)
                 }
