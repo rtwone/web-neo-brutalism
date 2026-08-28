@@ -1,4 +1,4 @@
-import { getRequestSignals, getVisitorId, hashSignal } from '../lib/visitor.js'
+import { getRequestSignals } from '../lib/visitor.js'
 import { checkRateLimit } from '../lib/rate-limit.js'
 import { getStats, recordLike, recordView } from '../lib/stats.js'
 
@@ -28,7 +28,6 @@ const responseBody = (stats: Awaited<ReturnType<typeof getStats>>) => ({
     likes: stats.likes,
     views: stats.views,
     isLiked: stats.isLiked,
-    isAway: stats.isAway,
 })
 
 export default async function handler(request: VercelRequest, response: VercelResponse) {
@@ -42,9 +41,8 @@ export default async function handler(request: VercelRequest, response: VercelRe
     if (!['GET', 'POST'].includes(request.method || '')) return fail(response, 405, 'Method not allowed')
 
     try {
-        const { ip, userAgent } = getRequestSignals(request)
-        const ipHash = hashSignal(ip)
-        const visitorId = getVisitorId(request, response)
+        const { ip } = getRequestSignals(request)
+        const visitorId = ip
         const page = pageFromRequest(request)
 
         if (request.method === 'GET') {
@@ -54,16 +52,16 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
         if (actionName !== 'like' && actionName !== 'view') return fail(response, 400, 'Invalid action')
         const rate = actionName === 'like'
-            ? checkRateLimit(`like:${ipHash}`, 'LIKE_RATE_LIMIT', 'LIKE_RATE_WINDOW', 5, 60)
-            : checkRateLimit(`view:${ipHash}`, 'VIEW_RATE_LIMIT', 'VIEW_RATE_WINDOW', 30, 60)
+            ? checkRateLimit(`like:${ip}`, 'LIKE_RATE_LIMIT', 'LIKE_RATE_WINDOW', 5, 60)
+            : checkRateLimit(`view:${ip}`, 'VIEW_RATE_LIMIT', 'VIEW_RATE_WINDOW', 30, 60)
         if (!rate.allowed) {
             response.setHeader('Retry-After', String(rate.retryAfter))
             return fail(response, 429, 'Too many requests')
         }
 
         const stats = actionName === 'like'
-            ? await recordLike(visitorId, ipHash, page)
-            : await recordView(visitorId, page, ipHash, hashSignal(userAgent || 'unknown'))
+            ? await recordLike(visitorId, page)
+            : await recordView(visitorId, page)
         return response.status(200).json(responseBody(stats))
     } catch {
         return fail(response, 500, 'Stats service unavailable')

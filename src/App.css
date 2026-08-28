@@ -1895,18 +1895,6 @@ footer {
   font-size: 15px;
 }
 
-.away-dot {
-  width: 11px;
-  height: 11px;
-  border: 2px solid var(--line);
-  border-radius: 50%;
-  background: var(--green);
-}
-
-.away-dot.away {
-  background: #ef6258;
-}
-
 .visitor-stats-error {
   position: absolute;
   left: 0;

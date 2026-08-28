@@ -1,25 +1,13 @@
 import { useEffect, useState } from 'react'
 
 const page = '/'
-const visitorStorageKey = 'visitor_id'
 const viewStorageKey = 'visitor_viewed_home'
 const viewTimeStorageKey = 'visitor_viewed_at_wib'
 const viewDedupMs = 3 * 60 * 60 * 1000
 
-const getVisitorId = () => {
-    const existingId = window.localStorage.getItem(visitorStorageKey)
-    if (existingId) return existingId
-    const visitorId = crypto.randomUUID()
-    window.localStorage.setItem(visitorStorageKey, visitorId)
-    return visitorId
-}
+const statsRequest = (url: string, options: RequestInit = {}) => fetch(url, options)
 
-const statsRequest = (url: string, options: RequestInit = {}) => fetch(url, {
-    ...options,
-    headers: { ...options.headers, 'x-visitor-id': getVisitorId() },
-})
-
-const statsUrl = (path: string) => `${path}&visitor_id=${encodeURIComponent(getVisitorId())}`
+const statsUrl = (path: string) => path
 
 const wibTimestamp = (date: Date) => new Intl.DateTimeFormat('sv-SE', {
     timeZone: 'Asia/Jakarta',
@@ -47,10 +35,9 @@ type Stats = {
     likes: number
     views: number
     isLiked: boolean
-    isAway: boolean
 }
 
-const initialStats: Stats = { likes: 0, views: 0, isLiked: false, isAway: false }
+const initialStats: Stats = { likes: 0, views: 0, isLiked: false }
 
 export function VisitorStats() {
     const [stats, setStats] = useState(initialStats)
@@ -133,11 +120,6 @@ export function VisitorStats() {
                     <span className="visitor-stat-icon" aria-hidden="true">◉</span>
                     <strong>{loading ? '—' : stats.views}</strong>
                     <small>Views</small>
-                </div>
-                <div className="visitor-stat visitor-away-stat">
-                    <span className={`away-dot ${stats.isAway ? 'away' : ''}`} aria-hidden="true" />
-                    <strong>{stats.isAway ? 'Away' : 'Online'}</strong>
-                    <small>Status</small>
                 </div>
                 {error && <span className="visitor-stats-error" role="status">{error}</span>}
             </section>

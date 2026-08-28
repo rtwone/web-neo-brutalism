@@ -1,6 +1,6 @@
 # Visitor Stats Database Setup
 
-Visitor Stats uses Neon PostgreSQL through the server-only `DATABASE_URL`. The browser never receives database credentials or `IP_HASH_SECRET`.
+Visitor Stats uses Neon PostgreSQL through the server-only `DATABASE_URL`. The visitor identity is the real IP address received by the server.
 
 ## 1. Create a Neon project
 
@@ -22,7 +22,6 @@ Copy `.env.example` values into your local `.env` and set:
 
 ```text
 DATABASE_URL=postgresql://...
-IP_HASH_SECRET=<long-random-secret>
 ```
 
 The rate-limit defaults are 5 Like requests per 60 seconds, 30 View requests per 60 seconds, and 180-minute View deduplication. They can be changed with the matching environment variables.
@@ -33,7 +32,6 @@ Add these server-side environment variables in the Vercel project settings for e
 
 ```text
 DATABASE_URL
-IP_HASH_SECRET
 LIKE_RATE_LIMIT
 LIKE_RATE_WINDOW
 VIEW_RATE_LIMIT
