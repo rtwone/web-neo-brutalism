@@ -41,17 +41,17 @@ export const translations = {
             experience: 'Pengalaman',
             educationItems: [
                 {
-                    period: '2022 - 2025',
-                    title: 'SMK Negeri 1 Kalianget',
-                    subtitle: 'Desain Komunikasi Visual',
-                    tone: 'blue',
-                },
-                {
                     period: '2025 - Sekarang',
                     title: 'Universitas Wiraraja',
                     subtitle: 'Teknik Informatika',
                     badge: 'IPK: 3.98',
                     tone: 'yellow',
+                },
+                {
+                    period: '2022 - 2025',
+                    title: 'SMK Negeri 1 Kalianget',
+                    subtitle: 'Desain Komunikasi Visual',
+                    tone: 'blue',
                 },
             ] as JourneyItem[],
             experienceItems: [
@@ -147,17 +147,17 @@ export const translations = {
             experience: 'Experience',
             educationItems: [
                 {
-                    period: '2022 - 2025',
-                    title: 'SMK Negeri 1 Kalianget',
-                    subtitle: 'Visual Communication Design',
-                    tone: 'blue',
-                },
-                {
                     period: '2025 - Present',
                     title: 'Wiraraja University',
                     subtitle: 'Informatics Engineering',
                     badge: 'GPA: 3.98',
                     tone: 'yellow',
+                },
+                {
+                    period: '2022 - 2025',
+                    title: 'SMK Negeri 1 Kalianget',
+                    subtitle: 'Visual Communication Design',
+                    tone: 'blue',
                 },
             ] as JourneyItem[],
             experienceItems: [
