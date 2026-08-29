@@ -416,10 +416,15 @@ function App() {
   const [showScrollTop, setShowScrollTop] = useState(false)
   const [scrollDepth, setScrollDepth] = useState(0)
   const pendingNavigation = useRef<string | null>(null)
+  const normalizeActiveSection = (section: string) => {
+    if (section === 'journey' || section === 'skills') return 'about'
+    return section
+  }
+
   const [activeSection, setActiveSection] = useState(
     () => window.location.pathname.replace(/\/$/, '') === '/projects'
       ? 'projects'
-      : window.location.hash.slice(1) || 'home',
+      : normalizeActiveSection(window.location.hash.slice(1) || 'home'),
   )
   const [formState, setFormState] = useState<'idle' | 'sending' | 'success' | 'validation-error' | 'send-error'>('idle')
   const t = translations[language]
@@ -444,7 +449,7 @@ function App() {
   }, [])
 
   useEffect(() => {
-    const handleHashChange = () => setActiveSection(window.location.hash.slice(1) || 'home')
+    const handleHashChange = () => setActiveSection(normalizeActiveSection(window.location.hash.slice(1) || 'home'))
     window.addEventListener('hashchange', handleHashChange)
     return () => window.removeEventListener('hashchange', handleHashChange)
   }, [])
@@ -452,7 +457,7 @@ function App() {
   useEffect(() => {
     if (window.location.pathname.replace(/\/$/, '') === '/projects') return
 
-    const sections = ['home', 'about', 'projects', 'contact']
+    const sections = ['home', 'about', 'journey', 'projects', 'contact']
       .map((sectionId) => document.getElementById(sectionId))
       .filter((section): section is HTMLElement => section !== null)
     const observer = new IntersectionObserver(
@@ -472,7 +477,23 @@ function App() {
           .filter((entry) => entry.isIntersecting)
           .sort((first, second) => second.intersectionRatio - first.intersectionRatio)[0]
 
-        if (visibleSection) setActiveSection(visibleSection.target.id)
+        const homeSection = document.getElementById('home')
+        const homeInView = homeSection && homeSection.getBoundingClientRect().top <= window.innerHeight * .35 && homeSection.getBoundingClientRect().bottom >= window.innerHeight * .25
+
+        const aboutSection = document.getElementById('about')
+        const aboutInView = aboutSection && aboutSection.getBoundingClientRect().top <= window.innerHeight * .7 && aboutSection.getBoundingClientRect().bottom >= 0
+
+        if (homeInView) {
+          setActiveSection('home')
+          return
+        }
+
+        if (aboutInView) {
+          setActiveSection('about')
+          return
+        }
+
+        if (visibleSection) setActiveSection(normalizeActiveSection(visibleSection.target.id))
       },
       { rootMargin: '-20% 0px -55% 0px', threshold: [0, .25, .5, .75] },
     )
@@ -488,7 +509,7 @@ function App() {
     })
 
     const revealElements = Array.from(document.querySelectorAll<HTMLElement>(
-      '.section:not(.hero) > *, .marquee, footer',
+      '.section:not(.hero) > *, .marquee, footer, .journey-panel, .journey-panel-header, .timeline-item, .journey-card',
     ))
 
     const observer = new IntersectionObserver(
@@ -513,7 +534,7 @@ function App() {
         element.style.removeProperty('--reveal-delay')
       })
     }
-  }, [])
+  }, [language])
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -731,6 +752,58 @@ function App() {
                   {t.about.cta} <span>↗</span>
                 </a>
                 <VisitorStats />
+              </div>
+            </div>
+          </section>
+
+          <section id="journey" className="section journey">
+            <div className="section-heading reveal-on-scroll">
+              <span>{t.journey.kicker}</span>
+              <h2>{t.journey.title}</h2>
+              <p>{t.journey.subtitle}</p>
+            </div>
+
+            <div className="journey-layout reveal-on-scroll">
+              <div className="journey-panel reveal-on-scroll">
+                <div className="journey-panel-header reveal-on-scroll">
+                  <span>{t.journey.education}</span>
+                </div>
+                <div className="timeline">
+                  {t.journey.educationItems.map((item) => (
+                    <article key={`${item.period}-${item.title}`} className="timeline-item reveal-on-scroll">
+                      <div className="timeline-marker" aria-hidden="true" />
+                      <div className="timeline-content">
+                        <span className="journey-date">{item.period}</span>
+                        <div className={`journey-card journey-card--${item.tone}`}>
+                          <h3>{item.title}</h3>
+                          {item.subtitle && <p>{item.subtitle}</p>}
+                          {item.badge && <span className="journey-badge">{item.badge}</span>}
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
+
+              <div className="journey-panel reveal-on-scroll">
+                <div className="journey-panel-header reveal-on-scroll">
+                  <span>{t.journey.experience}</span>
+                </div>
+                <div className="timeline">
+                  {t.journey.experienceItems.map((item) => (
+                    <article key={`${item.period}-${item.title}`} className="timeline-item reveal-on-scroll">
+                      <div className="timeline-marker" aria-hidden="true" />
+                      <div className="timeline-content">
+                        <span className="journey-date">{item.period}</span>
+                        <div className={`journey-card journey-card--${item.tone}`}>
+                          <h3>{item.title}</h3>
+                          {item.subtitle && <p>{item.subtitle}</p>}
+                          {item.badge && <span className="journey-badge">{item.badge}</span>}
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
               </div>
             </div>
           </section>

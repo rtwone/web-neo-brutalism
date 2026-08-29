@@ -1,6 +1,14 @@
 export type Language = 'id' | 'en'
 export type ProjectCategory = 'Design' | 'Development' | 'Other'
 
+type JourneyItem = {
+    period: string
+    title: string
+    subtitle: string
+    tone: 'blue' | 'yellow' | 'orange' | 'green' | 'white'
+    badge?: string
+}
+
 export const translations = {
     id: {
         nav: {
@@ -25,14 +33,56 @@ export const translations = {
             focus: 'Fokus saat ini',
             cta: 'Lebih dekat',
         },
+        journey: {
+            kicker: '02 / Perjalanan',
+            title: 'Perjalanan',
+            subtitle: 'Perjalanan pendidikan dan pengalaman yang membentuk saya hingga saat ini.',
+            education: 'Pendidikan',
+            experience: 'Pengalaman',
+            educationItems: [
+                {
+                    period: '2022 - 2025',
+                    title: 'SMK Negeri 1 Kalianget',
+                    subtitle: 'Desain Komunikasi Visual',
+                    tone: 'blue',
+                },
+                {
+                    period: '2025 - Sekarang',
+                    title: 'Universitas Wiraraja',
+                    subtitle: 'Teknik Informatika',
+                    badge: 'IPK: 3.98',
+                    tone: 'yellow',
+                },
+            ] as JourneyItem[],
+            experienceItems: [
+                {
+                    period: 'Jan 2026 - Sekarang',
+                    title: 'Social Media Marketing Specialist',
+                    subtitle: 'Himpunan Mahasiswa Teknik Informatika UNIJA',
+                    tone: 'orange',
+                },
+                {
+                    period: 'Nov 2020 - Sekarang',
+                    title: 'Freelance Software Engineer',
+                    subtitle: 'Irfan Design & Coding',
+                    tone: 'green',
+                },
+                {
+                    period: 'Nov 2024 - Feb 2025',
+                    title: 'Student Intern',
+                    subtitle: 'Dinas Kominfo Sumenep',
+                    tone: 'white',
+                },
+            ] as JourneyItem[],
+        },
         marquee: 'PEMROGRAMAN | TEKNOLOGI | PENGGEMAR AI | VIDEOGRAFI | FOTOGRAFI | DESAIN GRAFIS | ASTROFIL | ALAM | SEJARAH |',
         skills: {
-            kicker: '02 / Toolkit',
+            kicker: '03 / Toolkit',
             title: 'Technical skills',
             sub: 'Peralatan yang saya gunakan untuk mengubah rasa ingin tahu menjadi sesuatu yang bisa dipakai.',
         },
         projects: {
-            kicker: '03 / Selected work',
+            kicker: '04 / Selected work',
             title: 'Proyek pilihan',
             sub: 'Eksperimen, tugas, dan karya yang dibangun dengan rasa ingin tahu.',
             all: 'Semua',
@@ -45,7 +95,7 @@ export const translations = {
             github: 'GitHub',
         },
         contact: {
-            kicker: '04 / Mari berkolaborasi',
+            kicker: '05 / Mari berkolaborasi',
             title: 'Punya ide? Mari buat sesuatu.',
             sub: 'Jika kamu memiliki project, ide, atau ingin berkolaborasi, jangan ragu untuk menghubungi saya.',
             name: 'Nama',
@@ -89,14 +139,56 @@ export const translations = {
             focus: 'Current focus',
             cta: 'Get to know me',
         },
+        journey: {
+            kicker: '02 / My Journey',
+            title: 'Journey',
+            subtitle: 'The education and experience that shaped me along the way.',
+            education: 'Education',
+            experience: 'Experience',
+            educationItems: [
+                {
+                    period: '2022 - 2025',
+                    title: 'SMK Negeri 1 Kalianget',
+                    subtitle: 'Visual Communication Design',
+                    tone: 'blue',
+                },
+                {
+                    period: '2025 - Present',
+                    title: 'Wiraraja University',
+                    subtitle: 'Informatics Engineering',
+                    badge: 'GPA: 3.98',
+                    tone: 'yellow',
+                },
+            ] as JourneyItem[],
+            experienceItems: [
+                {
+                    period: 'Jan 2026 - Present',
+                    title: 'Social Media Marketing Specialist',
+                    subtitle: 'Himpunan Mahasiswa Teknik Informatika UNIJA',
+                    tone: 'orange',
+                },
+                {
+                    period: 'Nov 2020 - Present',
+                    title: 'Freelance Software Engineer',
+                    subtitle: 'Irfan Design & Coding',
+                    tone: 'green',
+                },
+                {
+                    period: 'Nov 2024 - Feb 2025',
+                    title: 'Student Intern',
+                    subtitle: 'Dinas Kominfo Sumenep',
+                    tone: 'white',
+                },
+            ] as JourneyItem[],
+        },
         marquee: 'PROGRAMMING | TECH | AI ENTHUSIAST | VIDEOGRAPHY | PHOTOGRAPHY | DESIGN GRAPHIC | ASTROPHILE | NATURE | HISTORY |',
         skills: {
-            kicker: '02 / Toolkit',
+            kicker: '03 / Toolkit',
             title: 'Technical skills',
             sub: 'The tools I use to turn curiosity into something people can use.',
         },
         projects: {
-            kicker: '03 / Selected work',
+            kicker: '04 / Selected work',
             title: 'Selected projects',
             sub: 'Experiments, coursework, and work built with curiosity.',
             all: 'All',
@@ -109,7 +201,7 @@ export const translations = {
             github: 'GitHub',
         },
         contact: {
-            kicker: '04 / Let’s collaborate',
+            kicker: '05 / Let’s collaborate',
             title: 'Have an idea? Let’s make something.',
             sub: 'If you have a project, an idea, or want to collaborate, feel free to reach out.',
             name: 'Name',

@@ -856,6 +856,158 @@ footer a:hover {
   padding-bottom: 5px;
 }
 
+.journey {
+  border-top: 2px solid var(--line);
+  padding-top: 90px;
+}
+
+.journey-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px;
+  margin-top: 42px;
+}
+
+.journey-panel {
+  background: rgba(255, 253, 247, 0.68);
+  border: 2px solid var(--line);
+  box-shadow: 4px 4px 0 var(--line);
+  padding: 18px 18px 12px;
+  transition: transform .4s cubic-bezier(.2, .8, .2, 1), box-shadow .4s cubic-bezier(.2, .8, .2, 1);
+}
+
+.journey-panel-header {
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--line);
+}
+
+.journey-panel-header span {
+  display: inline-block;
+  font: 700 12px var(--mono);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  background: var(--yellow);
+  border: 2px solid var(--line);
+  padding: 7px 10px;
+  box-shadow: 3px 3px 0 var(--line);
+  transition: transform .4s cubic-bezier(.2, .8, .2, 1), box-shadow .4s cubic-bezier(.2, .8, .2, 1);
+}
+
+.timeline {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.timeline::before {
+  content: "";
+  position: absolute;
+  left: 10px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--line);
+}
+
+.timeline-item {
+  position: relative;
+  padding-left: 42px;
+}
+
+.timeline-marker {
+  position: absolute;
+  top: 9px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  background: var(--blue);
+  box-shadow: 2px 2px 0 var(--line);
+}
+
+.timeline-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.journey-date {
+  font: 700 11px var(--mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.journey-card {
+  background: var(--surface);
+  border: 2px solid var(--line);
+  box-shadow: none;
+  padding: 18px 18px 16px;
+  transform: translate3d(0, 0, 0) scale(1);
+  transition:
+    transform .2s ease,
+    box-shadow .2s ease,
+    filter .2s ease;
+}
+
+.journey-card--blue {
+  background: var(--blue);
+}
+
+.journey-card--yellow {
+  background: var(--yellow);
+}
+
+.journey-card--orange {
+  background: #F26A3D;
+}
+
+.journey-card--green {
+  background: var(--green);
+}
+
+.journey-card--white {
+  background: var(--surface);
+}
+
+.journey-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 3px 3px 0 var(--line);
+}
+
+.journey-card h3 {
+  margin: 0;
+  font-size: clamp(20px, 2vw, 28px);
+  line-height: 1.1;
+  letter-spacing: -.05em;
+}
+
+.journey-card p {
+  margin: 10px 0 0;
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.journey-badge {
+  display: inline-block;
+  margin-top: 12px;
+  border: 2px solid var(--line);
+  background: var(--surface);
+  padding: 6px 10px;
+  font: 700 11px var(--mono);
+  box-shadow: none;
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+
+.journey-badge:hover {
+  transform: translateY(-2px);
+  box-shadow: 3px 3px 0 var(--line);
+}
+
 .skills {
   display: grid;
   grid-template-columns: .7fr 1.3fr;
@@ -1572,25 +1724,27 @@ footer a:hover {
 }
 
 .design-project-card:hover {
-  transform: translateY(-5px) scale(1.01);
+  transform: translateY(-2px) scale(1.01);
 }
 
 .project-card {
   background: var(--surface);
   border: 2px solid var(--line);
   box-shadow: var(--shadow);
-  transition: transform .25s, box-shadow .25s;
+  transition: transform .28s cubic-bezier(.22, 1, .36, 1), box-shadow .28s cubic-bezier(.22, 1, .36, 1), filter .28s ease;
   cursor: pointer;
   overflow: hidden;
+  will-change: transform;
 }
 
 .project-card:hover {
-  transform: translate(-4px, -4px);
-  box-shadow: 8px 8px 0 var(--line);
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--line);
+  filter: saturate(1.04);
 }
 
 .project-card.design-project-card:hover {
-  transform: translate(-4px, -4px);
+  transform: translate(-2px, -2px);
 }
 
 .project-image {
@@ -2130,7 +2284,10 @@ footer div {
   transition:
     opacity .65s cubic-bezier(.22, 1, .36, 1) var(--reveal-delay, 0ms),
     translate .65s cubic-bezier(.22, 1, .36, 1) var(--reveal-delay, 0ms),
-    rotate .65s cubic-bezier(.22, 1, .36, 1) var(--reveal-delay, 0ms);
+    rotate .65s cubic-bezier(.22, 1, .36, 1) var(--reveal-delay, 0ms),
+    transform .2s ease,
+    box-shadow .2s ease,
+    filter .2s ease;
 }
 
 .reveal-on-scroll.is-visible {
