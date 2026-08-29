@@ -134,6 +134,23 @@
       font-size: 17px;
     }
 
+    .journey-panel-header span {
+      font-size: 10px;
+    }
+
+    .journey-card h3 {
+      font-size: clamp(22px, 6vw, 30px);
+      line-height: 1.08;
+    }
+
+    .journey-card p {
+      font-size: 14px;
+    }
+
+    .journey-badge {
+      font-size: 10px;
+    }
+
     .hero-actions {
       flex-direction: column;
       align-items: stretch;
@@ -2435,6 +2452,48 @@ footer div {
     gap: 55px;
   }
 
+  .journey {
+    padding-top: 74px;
+  }
+
+  .journey-layout {
+    grid-template-columns: 1fr;
+    gap: 22px;
+    margin-top: 28px;
+  }
+
+  .journey-panel {
+    padding: 14px 14px 10px;
+  }
+
+  .journey-panel-header {
+    margin-bottom: 14px;
+  }
+
+  .timeline {
+    gap: 14px;
+  }
+
+  .timeline-item {
+    padding-left: 36px;
+  }
+
+  .journey-card {
+    padding: 15px 14px 14px;
+  }
+
+  .journey-card h3 {
+    font-size: clamp(24px, 5vw, 34px);
+  }
+
+  .journey-card p {
+    font-size: 15px;
+  }
+
+  .journey-date {
+    font-size: 10px;
+  }
+
   .portrait {
     width: 90%;
     height: 380px;
@@ -2469,6 +2528,27 @@ footer div {
 
   .role {
     font-size: 17px;
+  }
+
+  .journey {
+    padding-top: 66px;
+  }
+
+  .journey-panel-header span {
+    font-size: 10px;
+  }
+
+  .journey-card h3 {
+    font-size: clamp(22px, 6vw, 30px);
+    line-height: 1.08;
+  }
+
+  .journey-card p {
+    font-size: 14px;
+  }
+
+  .journey-badge {
+    font-size: 10px;
   }
 
   .hero-actions {
