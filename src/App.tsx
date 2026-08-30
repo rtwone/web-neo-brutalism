@@ -16,7 +16,8 @@ function TypedRole({ text }: { text: string }) {
 
   useEffect(() => {
     const currentProfession = professions[professionIndex]
-    const typingSpeed = isDeleting ? 30 : 80
+    const typingSpeed = 80
+    const deletingSpeed = 15
     const pauseTime = 2000
 
     const timer = setTimeout(() => {
@@ -32,7 +33,7 @@ function TypedRole({ text }: { text: string }) {
         setIsDeleting(false)
         setProfessionIndex((professionIndex + 1) % professions.length)
       }
-    }, isDeleting || charIndex === currentProfession.length ? pauseTime : typingSpeed)
+    }, (!isDeleting && charIndex === currentProfession.length) ? pauseTime : (isDeleting ? deletingSpeed : typingSpeed))
 
     return () => clearTimeout(timer)
   }, [charIndex, isDeleting, professionIndex, professions])
