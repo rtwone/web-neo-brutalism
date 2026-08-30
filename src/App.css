@@ -447,6 +447,34 @@ footer a:hover {
   margin: 28px 0 17px;
 }
 
+.typed-role {
+  position: relative;
+  display: inline-block;
+  min-height: 1.5em;
+}
+
+.typed-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background-color: currentColor;
+  margin-left: 2px;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+
+  0%,
+  49% {
+    opacity: 1;
+  }
+
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
 .hero-description {
   color: var(--muted);
   max-width: 455px;

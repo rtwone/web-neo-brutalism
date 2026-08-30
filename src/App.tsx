@@ -7,6 +7,44 @@ import './App.css'
 
 type ContactIconName = 'mail' | 'github' | 'instagram' | 'linkedin'
 
+function TypedRole({ text }: { text: string }) {
+  const professions = text.split(' | ').map(p => p.trim())
+  const [displayText, setDisplayText] = useState('')
+  const [professionIndex, setProfessionIndex] = useState(0)
+  const [charIndex, setCharIndex] = useState(0)
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  useEffect(() => {
+    const currentProfession = professions[professionIndex]
+    const typingSpeed = isDeleting ? 30 : 80
+    const pauseTime = 2000
+
+    const timer = setTimeout(() => {
+      if (!isDeleting && charIndex < currentProfession.length) {
+        setDisplayText(currentProfession.substring(0, charIndex + 1))
+        setCharIndex(charIndex + 1)
+      } else if (isDeleting && charIndex > 0) {
+        setDisplayText(currentProfession.substring(0, charIndex - 1))
+        setCharIndex(charIndex - 1)
+      } else if (!isDeleting && charIndex === currentProfession.length) {
+        setTimeout(() => setIsDeleting(true), pauseTime)
+      } else if (isDeleting && charIndex === 0) {
+        setIsDeleting(false)
+        setProfessionIndex((professionIndex + 1) % professions.length)
+      }
+    }, isDeleting || charIndex === currentProfession.length ? pauseTime : typingSpeed)
+
+    return () => clearTimeout(timer)
+  }, [charIndex, isDeleting, professionIndex, professions])
+
+  return (
+    <span className="typed-role">
+      {displayText}
+      <span className="typed-cursor" />
+    </span>
+  )
+}
+
 function TwibbonPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const templateRef = useRef<HTMLImageElement | null>(null)
@@ -648,7 +686,7 @@ function App() {
               <h1>
                 {t.hero.title}<i>✦</i>
               </h1>
-              <p className="role">{t.hero.role}</p>
+              <p className="role"><TypedRole text={t.hero.role} /></p>
               <p className="hero-description">{t.hero.description}</p>
               <div className="hero-actions">
                 <a className="button primary" href="#projects">
