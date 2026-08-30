@@ -18,7 +18,7 @@ function TypedRole({ text }: { text: string }) {
     const currentProfession = professions[professionIndex]
     const typingSpeed = 80
     const deletingSpeed = 15
-    const pauseTime = 2000
+    const pauseTime = 1000
 
     const timer = setTimeout(() => {
       if (!isDeleting && charIndex < currentProfession.length) {
