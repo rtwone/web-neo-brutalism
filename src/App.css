@@ -980,10 +980,10 @@ footer a:hover {
 }
 
 .journey-date {
-  font: 700 11px var(--mono);
+  font: 800 14px var(--mono);
   letter-spacing: .08em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--ink);
 }
 
 .journey-card {
