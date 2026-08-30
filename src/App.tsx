@@ -3,6 +3,7 @@ import type { CSSProperties, FormEvent } from 'react'
 import { projects, skills, translations, twibbonConfig } from './data'
 import type { Language, Project, ProjectCategory } from './data'
 import { VisitorStats } from './components/VisitorStats'
+import { MinigamePage } from './components/MinigamePage'
 import './App.css'
 
 type ContactIconName = 'mail' | 'github' | 'instagram' | 'linkedin'
@@ -561,6 +562,7 @@ function App() {
   const currentPath = window.location.pathname.replace(/\/$/, '') || '/'
   const isProjectsPage = currentPath === '/projects'
   const isTwibbonPage = currentPath === '/twibbon'
+  const isMinigamePage = currentPath === '/minigame'
   const filteredProjectPage = projectFilter === 'All'
     ? projects
     : projects.filter((project) => project.category === projectFilter)
@@ -584,20 +586,30 @@ function App() {
           <span />
         </button>
         <nav className={menuOpen ? 'nav-links open' : 'nav-links'}>
-          {Object.entries(t.nav).map(([key, label]) => (
-            <a
-              className={activeSection === key ? 'active' : ''}
-              key={key}
-              href={`${isProjectsPage || isTwibbonPage ? '/' : ''}#${key === 'home' ? 'home' : key}`}
-              onClick={() => {
-                pendingNavigation.current = key
-                setActiveSection(key)
-                setMenuOpen(false)
-              }}
-            >
-              {label}
-            </a>
-          ))}
+          {Object.entries(t.nav).map(([key, label]) => {
+            let href = '#' + (key === 'home' ? 'home' : key)
+            if (key === 'minigame') {
+              href = '/minigame'
+            } else if (isProjectsPage || isTwibbonPage || isMinigamePage) {
+              href = '/' + href
+            }
+            return (
+              <a
+                className={activeSection === key ? 'active' : ''}
+                key={key}
+                href={href}
+                onClick={() => {
+                  if (key !== 'minigame') {
+                    pendingNavigation.current = key
+                    setActiveSection(key)
+                  }
+                  setMenuOpen(false)
+                }}
+              >
+                {label}
+              </a>
+            )
+          })}
           <div className="nav-actions">
             <button
               className="lang"
@@ -622,6 +634,8 @@ function App() {
       <main>
         {isTwibbonPage ? (
           <TwibbonPage />
+        ) : isMinigamePage ? (
+          <MinigamePage language={language} t={t} dark={dark} />
         ) : isProjectsPage ? (
           <section className="section projects projects-page">
             <div className="projects-top section-heading">
