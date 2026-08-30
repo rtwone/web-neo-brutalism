@@ -625,7 +625,7 @@ function App() {
         ) : isProjectsPage ? (
           <section className="section projects projects-page">
             <div className="projects-top section-heading">
-              <span>03 / {language === 'id' ? 'Semua karya' : 'All work'}</span>
+              <span>04 / {language === 'id' ? 'Semua karya' : 'All work'}</span>
               <h1>{t.projects.title}</h1>
               <p>{t.projects.sub}</p>
             </div>
