@@ -19,7 +19,7 @@ function TwibbonPage() {
   const [caption] = useState<string>(twibbonConfig.captionTemplate)
   const [captionFields, setCaptionFields] = useState<Record<string, string>>({})
   const [feedback, setFeedback] = useState('')
-  const [actionError, setActionError] = useState<'download' | 'instagram' | 'copy' | null>(null)
+  const [actionError, setActionError] = useState<'download' | 'copy' | null>(null)
   const [isPosting, setIsPosting] = useState(false)
   const [captionPopupOpen, setCaptionPopupOpen] = useState(false)
   const renderCanvasRef = useRef<() => void>(() => { })
@@ -195,7 +195,7 @@ function TwibbonPage() {
     window.setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 
-  const rejectAction = (action: 'download' | 'instagram') => {
+  const rejectAction = (action: 'download') => {
     setFeedback('Upload foto terlebih dahulu sebelum melanjutkan.')
     setActionError(null)
     requestAnimationFrame(() => setActionError(action))
@@ -230,49 +230,6 @@ function TwibbonPage() {
     }
     downloadImage(blob)
     setFeedback('Twibbon berhasil dibuat dan diunduh.')
-  }
-
-  const shareToInstagram = async () => {
-    if (!photoUrl) {
-      rejectAction('instagram')
-      return
-    }
-    setIsPosting(true)
-    try {
-      const blob = await canvasBlob()
-      if (!blob) {
-        setFeedback('Gagal membuat twibbon. Silakan coba lagi.')
-        return
-      }
-      const file = new File([blob], twibbonConfig.outputFileName, {
-        type: 'image/png',
-        lastModified: Date.now(),
-      })
-      const canShareFile = typeof navigator.share === 'function'
-        && typeof navigator.canShare === 'function'
-        && navigator.canShare({ files: [file] })
-
-      if (canShareFile) {
-        try {
-          await navigator.share({ files: [file], text: resolvedCaption })
-          setFeedback('Pilih Instagram pada menu share untuk melanjutkan posting.')
-        } catch (error) {
-          if ((error as DOMException).name !== 'AbortError') {
-            setFeedback('Terjadi kesalahan saat membagikan twibbon. Silakan coba lagi.')
-          }
-        }
-        return
-      }
-
-      await copyCaption(resolvedCaption)
-      downloadImage(blob)
-      window.open(twibbonConfig.instagramPostUrl, '_blank', 'noopener,noreferrer')
-      setFeedback('Twibbon berhasil diunduh dan caption telah disalin. Silakan posting ke Instagram.')
-    } catch {
-      setFeedback('Terjadi kesalahan saat membuat twibbon. Silakan coba lagi.')
-    } finally {
-      setIsPosting(false)
-    }
   }
 
   return (
@@ -347,13 +304,13 @@ function TwibbonPage() {
               ))}
             </div>
           )}
-          <button type="button" className={`button secondary caption-copy-button ${hasEmptyCaptionField ? 'is-disabled' : ''} ${actionError === 'copy' ? 'shake-error' : ''}`} data-disabled={hasEmptyCaptionField} onClick={copyResolvedCaption}>Copy Caption <span>↗</span></button>
+          <button type="button" className={`button secondary caption-copy-button ${hasEmptyCaptionField ? 'is-disabled' : ''} ${actionError === 'copy' ? 'shake-error' : ''}`} data-disabled={hasEmptyCaptionField} onClick={copyResolvedCaption}>Salin Caption <span>↗</span></button>
         </div>
       </section>
 
       <section className="twibbon-actions" aria-label="Twibbon actions">
-        <div><span className="eyebrow">04 / READY TO SHARE</span><p>{feedback || 'Sudah siap? Download atau bagikan hasil twibbon kamu.'}</p></div>
-        <div className="twibbon-action-buttons"><button type="button" className={`button primary ${actionError === 'download' ? 'shake-error' : ''}`} onClick={download} disabled={isPosting}>Download Twibbon <span>↓</span></button><button type="button" className={`button instagram-button ${actionError === 'instagram' ? 'shake-error' : ''}`} onClick={shareToInstagram} disabled={isPosting}>{isPosting ? 'Menyiapkan...' : 'Post ke Instagram'} <span>↗</span></button></div>
+        <div><span className="eyebrow">READY TO SHARE</span><p>{feedback || 'Sudah siap? Download, salin caption dan bagikan hasil twibbon kamu.'}</p></div>
+        <div className="twibbon-action-buttons"><button type="button" className={`button primary ${actionError === 'download' ? 'shake-error' : ''}`} onClick={download} disabled={isPosting}>Download Twibbon <span>↓</span></button></div>
       </section>
       {captionPopupOpen && (
         <div className="caption-popup-backdrop" role="presentation" onClick={() => setCaptionPopupOpen(false)}>
@@ -362,7 +319,7 @@ function TwibbonPage() {
             <span className="eyebrow">FULL CAPTION</span>
             <h2 id="caption-popup-title">Caption siap pakai</h2>
             <div className="caption-popup-text">{formattedCaption}</div>
-            <button type="button" className={`button primary ${hasEmptyCaptionField ? 'is-disabled' : ''} ${actionError === 'copy' ? 'shake-error' : ''}`} onClick={copyResolvedCaption}>Copy Caption <span>↗</span></button>
+            <button type="button" className={`button primary ${hasEmptyCaptionField ? 'is-disabled' : ''} ${actionError === 'copy' ? 'shake-error' : ''}`} onClick={copyResolvedCaption}>Salin Caption <span>↗</span></button>
           </section>
         </div>
       )}

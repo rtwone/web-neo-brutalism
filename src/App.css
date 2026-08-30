@@ -1611,11 +1611,6 @@ footer a:hover {
   gap: 12px;
 }
 
-.instagram-button {
-  background: #f1b7c7;
-  color: #141414;
-}
-
 @media (max-width: 800px) {
   .twibbon-page {
     padding-top: 38px;

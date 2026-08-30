@@ -549,7 +549,7 @@ export type Translations = typeof translations.id
 export const twibbonConfig = {
     title: 'Buat Twibbon Kamu',
     subtitle: 'Upload foto kamu, sesuaikan posisinya, dan buat twibbon kamu sendiri dalam beberapa langkah.',
-    eyebrow: '05 / CREATIVE TOOL',
+    eyebrow: 'CREATIVE TOOL',
     templatePath: '/images/twibbon.png',
     captionTemplate: 'Template Caption untuk Testing {nama} dan {keterangan}',
     outputFileName: 'twibbon-karya.png',
