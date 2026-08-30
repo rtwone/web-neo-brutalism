@@ -108,6 +108,10 @@ export const translations = {
             error: 'Lengkapi semua field sebelum mengirim.',
             sendError: 'Pesan belum terkirim. Silakan coba lagi nanti.',
             details: 'Info kontak',
+            namePlaceholder: 'Irfan Hariyanto',
+            emailPlaceholder: 'hello@example.com',
+            subjectPlaceholder: 'Mari buat sesuatu',
+            messagePlaceholder: 'Ceritakan tentang ideamu...',
         },
         modal: {
             role: 'Peran',
@@ -213,7 +217,10 @@ export const translations = {
             success: 'Message ready to send. I will get back to you soon.',
             error: 'Please complete every field before sending.',
             sendError: 'Message was not sent. Please try again later.',
-            details: 'Contact details',
+            details: 'Contact details', namePlaceholder: 'Irfan Hariyanto',
+            emailPlaceholder: 'hello@example.com',
+            subjectPlaceholder: 'Let\'s build something',
+            messagePlaceholder: 'Tell me a little about your idea...',
         },
         modal: {
             role: 'Role',

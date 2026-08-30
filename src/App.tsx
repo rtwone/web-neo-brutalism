@@ -886,11 +886,11 @@ function App() {
             </div>
             <form className="contact-form" onSubmit={submit}>
               <div className="contact-fields-row">
-                <label>{t.contact.name}<input required name="name" placeholder="Irfan Hariyanto" /></label>
-                <label>{t.contact.email}<input required type="email" name="email" placeholder="hello@example.com" /></label>
+                <label>{t.contact.name}<input required name="name" placeholder={t.contact.namePlaceholder} /></label>
+                <label>{t.contact.email}<input required type="email" name="email" placeholder={t.contact.emailPlaceholder} /></label>
               </div>
-              <label>{t.contact.subject}<input required name="subject" placeholder="Let's build something" /></label>
-              <label>{t.contact.message}<textarea required name="message" rows={4} placeholder="Tell me a little about your idea..." /></label>
+              <label>{t.contact.subject}<input required name="subject" placeholder={t.contact.subjectPlaceholder} /></label>
+              <label>{t.contact.message}<textarea required name="message" rows={4} placeholder={t.contact.messagePlaceholder} /></label>
               <button
                 type="submit"
                 className={`button primary ${formState === 'validation-error' ? 'shake-error' : ''}`}
