@@ -382,7 +382,22 @@ type DesignProject = {
     url?: string
 }
 
-export type Project = DevelopmentProject | DesignProject
+type OtherProject = {
+    id: number
+    category: 'Other'
+    title: string
+    type: LocalizedText
+    year: string
+    image: string
+    fallbackColor: string
+    description: LocalizedText
+    tech: string[]
+    role: LocalizedText
+    github?: string
+    url?: string
+}
+
+export type Project = DevelopmentProject | DesignProject | OtherProject
 
 export const projects: Project[] = [
     {
@@ -566,7 +581,7 @@ export const projects: Project[] = [
         },
         year: '2026',
         image: '/images/developments/webportofoliov3.png',
-        fallbackColor: '#8ab4f0',
+        fallbackColor: '#a8e3b4',
         description: {
             id: 'Iterasi ketiga dari situs web portofolio pribadi yang menampilkan identitas profesional sebagai Graphic Designer dan WhatsApp Bot Developer. Mengusung konsep desain modern dengan mode gelap elegan, gaya visual warm neo, struktur konten yang bersih, serta fitur interaktif untuk mempresentasikan karya secara profesional.',
             en: 'The third iteration of a personal portfolio website showcasing professional identity as a Graphic Designer and WhatsApp Bot Developer. Features a modern design concept with an elegant dark mode, warm neo visual style, clean content structure, and interactive elements to present works professionally.',
@@ -577,6 +592,28 @@ export const projects: Project[] = [
             en: 'Product developer',
         },
         github: 'https://github.com/rtwone/v3-irfanhariyanto',
+    },
+    {
+        id: 21,
+        category: 'Other',
+        title: 'Film Pendek | Vlogger Sial',
+        type: {
+            id: 'Film Pendek',
+            en: 'Short Film',
+        },
+        year: '2024',
+        image: '/images/other/vloger-sial.jpg',
+        fallbackColor: '#8ab4f0',
+        description: {
+            id: 'Sebuah film pendek bergenre horor-vlog yang mengisahkan perjalanan sekelompok vlogger yang mengalami kejadian-kejadian mistis dan menyeramkan setelah tinggal di sebuah rumah pinjaman.',
+            en: 'A short horror-vlog film that follows a group of vloggers experiencing eerie and mystical encounters after staying at a borrowed house.',
+        },
+        tech: ['Canon Camera', 'Apple iPhone', 'CapCut'],
+        role: {
+            id: 'Penulis, Sutradara, Editor, Juru Kamera',
+            en: 'Writer, Director, Editor, Camera-Man',
+        },
+        url: 'https://www.youtube.com/watch?v=NtVBdxHxJb8',
     },
 ]
 

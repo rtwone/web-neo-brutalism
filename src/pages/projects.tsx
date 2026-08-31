@@ -107,7 +107,9 @@ export function ProjectsPage({ language }: { language: 'en' | 'id' }) {
                             onError={(event) => { event.currentTarget.style.opacity = '0' }}
                         />
                         {selected.category !== 'Design' && <>
-                            <span className="category-badge">{t.projects.development}</span>
+                            <span className="category-badge">
+                                {selected.category === 'Development' ? t.projects.development : t.projects.other}
+                            </span>
                             <h2>{selected.title}</h2>
                             <p>{selected.description[language]}</p>
                             <div className="modal-facts">
