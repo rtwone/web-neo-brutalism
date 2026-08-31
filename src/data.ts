@@ -625,6 +625,5 @@ export const twibbonConfig = {
     eyebrow: 'CREATIVE TOOL',
     templatePath: '/images/twibbon.png',
     captionTemplate: 'Template Caption untuk Testing {nama} dan {keterangan}',
-    outputFileName: 'twibbon-karya.png',
-    instagramPostUrl: 'https://www.instagram.com/',
+    outputFileName: 'twibbon-fosfat.jpg',
 } as const
