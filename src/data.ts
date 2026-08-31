@@ -118,13 +118,6 @@ export const translations = {
             year: 'Tahun',
             close: 'Tutup',
         },
-        notFound: {
-            code: '404',
-            title: 'Halaman Tidak Ditemukan',
-            message: 'Maaf, halaman yang Anda cari tidak tersedia atau telah dipindahkan.',
-            suggestion: 'Coba kembali ke beranda atau gunakan navigasi di atas.',
-            button: 'Kembali ke Beranda',
-        },
         footer: '© 2026 Irfan Hariyanto. All rights reserved.',
     },
     en: {
@@ -233,13 +226,6 @@ export const translations = {
             role: 'Role',
             year: 'Year',
             close: 'Close',
-        },
-        notFound: {
-            code: '404',
-            title: 'Page Not Found',
-            message: 'Sorry, the page you are looking for is not available or has been moved.',
-            suggestion: 'Try going back to the home page or use the navigation above.',
-            button: 'Back to Home',
         },
         footer: '© 2026 Irfan Hariyanto. All rights reserved.',
     },
