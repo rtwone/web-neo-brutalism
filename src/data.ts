@@ -556,6 +556,28 @@ export const projects: Project[] = [
         fallbackColor: '#f28d69',
         url: 'https://www.instagram.com/p/Dcm55ITPsbq/',
     },
+    {
+        id: 20,
+        category: 'Development',
+        title: 'Web Portofolio V3',
+        type: {
+            id: 'Website Portofolio',
+            en: 'Portfolio Website',
+        },
+        year: '2026',
+        image: '/images/developments/webportofoliov3.png',
+        fallbackColor: '#8ab4f0',
+        description: {
+            id: 'Iterasi ketiga dari situs web portofolio pribadi yang menampilkan identitas profesional sebagai Graphic Designer dan WhatsApp Bot Developer. Mengusung konsep desain modern dengan mode gelap elegan, gaya visual warm neo, struktur konten yang bersih, serta fitur interaktif untuk mempresentasikan karya secara profesional.',
+            en: 'The third iteration of a personal portfolio website showcasing professional identity as a Graphic Designer and WhatsApp Bot Developer. Features a modern design concept with an elegant dark mode, warm neo visual style, clean content structure, and interactive elements to present works professionally.',
+        },
+        tech: ['Next.js', 'React', 'Tailwind CSS', 'JavaScript'],
+        role: {
+            id: 'Product developer',
+            en: 'Product developer',
+        },
+        github: 'https://github.com/rtwone/portofolio',
+    },
 ]
 
 export type Translations = typeof translations.id
