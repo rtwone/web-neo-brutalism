@@ -249,7 +249,7 @@ function App() {
   const developmentProjects = projects.filter((project) => project.category === 'Development')
 
   if (isUnknownPage) {
-    return <NotFoundPage />
+    return <NotFoundPage language={language} />
   }
 
   return (
