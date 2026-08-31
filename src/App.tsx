@@ -248,6 +248,11 @@ function App() {
   const designProjects = projects.filter((project) => project.category === 'Design')
   const developmentProjects = projects.filter((project) => project.category === 'Development')
 
+  const handleBrandClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault()
+    window.location.assign(currentPath)
+  }
+
   if (isUnknownPage) {
     return <NotFoundPage language={language} />
   }
@@ -256,7 +261,7 @@ function App() {
     <div className="site-shell">
       <header className="navbar">
         <div className="nav-brand">
-          <a className="nav-brand-link" href="/">
+          <a className="nav-brand-link" href={currentPath} onClick={handleBrandClick}>
             <span className="brand">IH<span>.</span></span>
             <span className="nav-brand-text">Portofolio<br />Irfan Hariyanto</span>
           </a>
@@ -544,7 +549,7 @@ function App() {
         </>}
       </main>
       <footer>
-        <a className="brand" href="/">IH<span>.</span></a>
+        <a className="brand" href={currentPath} onClick={handleBrandClick}>IH<span>.</span></a>
         <small>{t.footer}</small>
       </footer>
 
