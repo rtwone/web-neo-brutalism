@@ -576,7 +576,7 @@ export const projects: Project[] = [
             id: 'Product developer',
             en: 'Product developer',
         },
-        github: 'https://github.com/rtwone/portofolio',
+        github: 'https://github.com/rtwone/v3-irfanhariyanto',
     },
 ]
 
