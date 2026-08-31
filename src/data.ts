@@ -549,6 +549,13 @@ export const projects: Project[] = [
         fallbackColor: '#f28d69',
         url: 'https://www.instagram.com/p/DZ9EPKRp6T9/',
     },
+    {
+        id: 19,
+        category: 'Design',
+        image: '/images/designs/comingsoonew26.webp',
+        fallbackColor: '#f28d69',
+        url: 'https://www.instagram.com/p/Dcm55ITPsbq/',
+    },
 ]
 
 export type Translations = typeof translations.id
