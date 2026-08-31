@@ -46,6 +46,31 @@ function TypedRole({ text }: { text: string }) {
   )
 }
 
+function NotFound({ language }: { language: Language }) {
+  const t = translations[language]
+
+  return (
+    <main className="not-found-page">
+      <div className="not-found-container">
+        <div className="not-found-content">
+          <div className="not-found-code">{t.notFound.code}</div>
+          <h1 className="not-found-title">{t.notFound.title}</h1>
+          <p className="not-found-message">{t.notFound.message}</p>
+          <p className="not-found-suggestion">{t.notFound.suggestion}</p>
+          <a href="/" className="button primary not-found-button">
+            {t.notFound.button}
+          </a>
+        </div>
+        <div className="not-found-decoration" aria-hidden="true">
+          <div className="decoration-circle" />
+          <div className="decoration-square" />
+          <div className="decoration-cross">+</div>
+        </div>
+      </div>
+    </main>
+  )
+}
+
 function TwibbonPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const templateRef = useRef<HTMLImageElement | null>(null)
@@ -561,6 +586,8 @@ function App() {
   const currentPath = window.location.pathname.replace(/\/$/, '') || '/'
   const isProjectsPage = currentPath === '/projects'
   const isTwibbonPage = currentPath === '/twibbon'
+  const isHomePage = currentPath === '/'
+  const isNotFound = !isHomePage && !isProjectsPage && !isTwibbonPage
   const filteredProjectPage = projectFilter === 'All'
     ? projects
     : projects.filter((project) => project.category === projectFilter)
@@ -678,6 +705,8 @@ function App() {
               ))}
             </div>}
           </section>
+        ) : isNotFound ? (
+          <NotFound language={language} />
         ) : <>
           <section id="home" className="hero section">
             <div className="hero-copy">

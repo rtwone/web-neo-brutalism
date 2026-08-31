@@ -1639,6 +1639,106 @@ footer a:hover {
   gap: 12px;
 }
 
+/* 404 Page Styles */
+.not-found-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 40px 20px;
+  background: linear-gradient(135deg, var(--background) 0%, var(--surface) 100%);
+}
+
+.not-found-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  width: 100%;
+  gap: 60px;
+}
+
+.not-found-content {
+  flex: 1;
+  z-index: 2;
+}
+
+.not-found-code {
+  font: 800 120px var(--display);
+  font-weight: 900;
+  line-height: 1;
+  color: var(--yellow);
+  text-shadow: 3px 3px 0 rgba(20, 20, 20, 0.1);
+  margin-bottom: 20px;
+}
+
+.not-found-title {
+  font: 700 42px var(--display);
+  margin: 0 0 20px 0;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.not-found-message {
+  font-size: 18px;
+  color: var(--ink);
+  margin: 0 0 12px 0;
+  line-height: 1.6;
+  max-width: 500px;
+}
+
+.not-found-suggestion {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 0 0 28px 0;
+  line-height: 1.5;
+  max-width: 500px;
+}
+
+.not-found-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.not-found-decoration {
+  flex: 1;
+  position: relative;
+  height: 400px;
+  opacity: 0.15;
+}
+
+.decoration-circle {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+}
+
+.decoration-square {
+  position: absolute;
+  width: 250px;
+  height: 250px;
+  border: 3px solid var(--ink);
+  bottom: 20px;
+  right: 100px;
+  transform: rotate(15deg);
+}
+
+.decoration-cross {
+  position: absolute;
+  font-size: 80px;
+  color: var(--ink);
+  top: 50%;
+  right: 120px;
+  transform: translate(0, -50%);
+  line-height: 1;
+}
+
 @media (max-width: 800px) {
   .twibbon-page {
     padding-top: 38px;
@@ -1704,6 +1804,39 @@ footer a:hover {
 
   .twibbon-action-buttons {
     flex-direction: column;
+  }
+
+  .not-found-container {
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  .not-found-code {
+    font-size: 80px;
+    margin-bottom: 15px;
+  }
+
+  .not-found-title {
+    font-size: 32px;
+  }
+
+  .not-found-message {
+    font-size: 16px;
+  }
+
+  .not-found-decoration {
+    height: 300px;
+    opacity: 0.08;
+  }
+
+  .decoration-circle {
+    width: 200px;
+    height: 200px;
+  }
+
+  .decoration-square {
+    width: 150px;
+    height: 150px;
   }
 }
 
