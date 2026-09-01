@@ -2446,7 +2446,16 @@ footer a:hover {
   padding: 12px;
   outline: 0;
   resize: vertical;
-  font-size: 16px;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+@media (max-width: 540px) {
+
+  .contact-form input,
+  .contact-form textarea {
+    font-size: 14px;
+  }
 }
 
 .contact-form input:focus,
