@@ -3112,12 +3112,16 @@ footer div {
     grid-template-columns: 1fr;
   }
 
+  .projects-page .desktop-project-grid {
+    display: none;
+  }
+
   .projects-page .mobile-project-flow {
+    display: grid;
     grid-template-columns: 1fr;
     gap: 22px;
   }
 
-  .projects-page .design-project-grid,
   .projects-page .mobile-design-block {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3128,7 +3132,6 @@ footer div {
     display: block;
   }
 
-  .projects-page .design-project-grid> :last-child:nth-child(odd),
   .projects-page .mobile-design-block> :last-child:nth-child(odd) {
     grid-column: 1 / -1;
   }
