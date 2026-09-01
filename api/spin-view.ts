@@ -23,7 +23,7 @@ const safeName = (name: string) => basename(name).replace(/[^a-zA-Z0-9._-]/g, '_
 const headerValue = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] : value
 const watermark = (width: number, height: number) => Buffer.from(`<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg"><text x="${width / 2}" y="${height - 34}" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="${Math.max(16, Math.round(Math.min(width, height) * .018))}" font-weight="600" font-style="italic">follow instagram account @irfvnny</text></svg>`)
 
-const parseUpload = (request: VercelRequest, directory: string) => new Promise<{ upload: Upload; size: 'original' | 'custom' }>((resolve, reject) => {
+const parseUpload = (request: VercelRequest, directory: string) => new Promise<{ upload: Upload; size: 'original' | 'custom'; originalName?: string }>((resolve, reject) => {
     const contentType = headerValue(request.headers['content-type'])
     if (!contentType?.startsWith('multipart/form-data')) { reject(new Error('Gunakan multipart/form-data untuk mengunggah file.')); return }
     const parser = Busboy({ headers: { 'content-type': contentType }, limits: { fileSize: MAX_FILE_SIZE, files: 1, fields: 2 } })
@@ -32,15 +32,16 @@ const parseUpload = (request: VercelRequest, directory: string) => new Promise<{
     let fileFinished = false
     let parserFinished = false
     let size: 'original' | 'custom' = 'original'
+    let originalName: string | undefined
     let settled = false
     const fail = (error: Error) => { fileError = error; if (!settled) { settled = true; reject(error) } }
     const finishIfReady = () => {
         if (settled || !parserFinished || !fileFinished) return
         if (fileError) { fail(fileError); return }
-        if (upload) { settled = true; resolve({ upload, size }) }
+        if (upload) { settled = true; resolve({ upload, size, originalName }) }
         else fail(new Error('Field file wajib diisi.'))
     }
-    parser.on('field', (name, value) => { if (name === 'size' && (value === 'original' || value === 'custom')) size = value })
+    parser.on('field', (name, value) => { if (name === 'size' && (value === 'original' || value === 'custom')) size = value; if (name === 'originalName') originalName = safeName(value) })
     parser.on('file', (name, stream, info) => {
         if (name !== 'file') { stream.resume(); return }
         const fileName = safeName(info.filename)
@@ -188,13 +189,14 @@ export default async function handler(request: VercelRequest, response: VercelRe
     if (request.method !== 'POST') { response.setHeader('Allow', 'POST'); return json(response, 405, 'Method tidak diizinkan.') }
     const directory = await mkdtemp(join(tmpdir(), 'spin-view-'))
     try {
-        const { upload, size } = await parseUpload(request, directory)
+        const { upload, size, originalName } = await parseUpload(request, directory)
         const detected = await detectKind(upload.path, upload.mime, upload.name)
         const { kind } = detected
         const originalResolution = await resolution(upload.path)
-        const inputExtension = extname(upload.name).toLowerCase()
+        const displayName = originalName || upload.name
+        const inputExtension = extname(displayName).toLowerCase()
         const outputExtension = size === 'custom' ? '.jpg' : detected.format
-        const outputName = `${basename(upload.name, inputExtension).toUpperCase()}_METASPIN_BY_IRFVNNY${outputExtension.toUpperCase()}`
+        const outputName = `${basename(displayName, inputExtension).toUpperCase()}_METASPIN_BY_IRFVNNY${outputExtension.toUpperCase()}`
         const outputPath = join(directory, outputName)
         if (kind === 'image' && size === 'custom') {
             await sharp(upload.path).rotate().resize(3024, 4032, { fit: 'cover', position: 'centre' }).withMetadata({ exif: { IFD0: { Make: 'Meta AI', Model: 'Ray-Ban Meta Smart Glasses 2' } } }).composite([{ input: watermark(3024, 4032) }]).jpeg({ quality: 95 }).toFile(outputPath)
@@ -207,7 +209,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
         }
         const outputResolution = await resolution(outputPath)
         const file = await readFile(outputPath)
-        const info = Buffer.from(JSON.stringify({ originalName: upload.name, format: detected.format.slice(1).toUpperCase(), originalResolution, outputResolution, originalMake: 'Metadata asli', originalModel: 'Metadata asli', fileName: outputName })).toString('base64')
+        const info = Buffer.from(JSON.stringify({ originalName: displayName, format: detected.format.slice(1).toUpperCase(), originalResolution, outputResolution, originalMake: 'Metadata asli', originalModel: 'Metadata asli', fileName: outputName })).toString('base64')
         const contentType = outputExtension === '.png' ? 'image/png' : outputExtension === '.jpg' || outputExtension === '.jpeg' ? 'image/jpeg' : outputExtension === '.mov' ? 'video/quicktime' : upload.mime
         response.status(200); response.setHeader('Content-Type', contentType); response.setHeader('Content-Disposition', `attachment; filename="${outputName}"`); response.setHeader('X-Spin-View-Info', info); response.end(file)
     } catch (error) {

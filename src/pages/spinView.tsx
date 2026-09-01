@@ -4,7 +4,27 @@ type SizeMode = 'original' | 'custom'
 type ResultInfo = { originalName: string; format: string; originalResolution: string; outputResolution: string; originalMake: string; originalModel: string; fileName: string }
 
 const maxFileSize = 25 * 1024 * 1024
+const maxRequestSize = 4 * 1024 * 1024
 const formatSize = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(2)} MB`
+const compressForUpload = async (file: File) => {
+    if (file.size <= maxRequestSize) return file
+    const url = URL.createObjectURL(file)
+    try {
+        const image = new Image()
+        await new Promise<void>((resolve, reject) => { image.onload = () => resolve(); image.onerror = () => reject(new Error('Foto tidak dapat dibaca.')); image.src = url })
+        const canvas = document.createElement('canvas')
+        canvas.width = image.naturalWidth
+        canvas.height = image.naturalHeight
+        const context = canvas.getContext('2d')
+        if (!context) throw new Error('Browser tidak dapat menyiapkan foto.')
+        context.drawImage(image, 0, 0)
+        for (const quality of [.86, .76, .66, .56]) {
+            const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality))
+            if (blob && blob.size <= maxRequestSize) return new File([blob], `${file.name.replace(/\.[^.]+$/, '')}.jpg`, { type: 'image/jpeg', lastModified: file.lastModified })
+        }
+        throw new Error('Foto terlalu besar untuk diproses. Coba gunakan foto dengan ukuran lebih kecil.')
+    } finally { URL.revokeObjectURL(url) }
+}
 const readJpegCamera = async (file: File) => {
     const bytes = new DataView(await file.slice(0, 2 * 1024 * 1024).arrayBuffer())
     if (bytes.byteLength < 4 || bytes.getUint8(0) !== 0xff || bytes.getUint8(1) !== 0xd8) return { make: 'Tidak tersedia', model: 'Tidak tersedia' }
@@ -120,8 +140,9 @@ export function SpinViewPage({ language }: { language: 'id' | 'en' }) {
     const processFile = async () => {
         if (!file) { setStatus('error'); setMessage(copy.selectFirst); return }
         setStatus('processing'); setMessage(copy.reading)
-        const formData = new FormData(); formData.append('file', file); formData.append('size', size)
         try {
+            const uploadFile = await compressForUpload(file)
+            const formData = new FormData(); formData.append('file', uploadFile); formData.append('size', size); formData.append('originalName', file.name)
             const response = await fetch('/spin-view', { method: 'POST', body: formData })
             if (!response.ok) {
                 const body = await response.json().catch(() => ({})) as { error?: string }
