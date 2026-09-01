@@ -24,6 +24,36 @@ function DesignProjectCard({ project, onSelect }: { project: Project; onSelect: 
     )
 }
 
+function buildMobileProjectBlocks(items: Project[]) {
+    const blocks: Project[][] = []
+    let current: Project[] = []
+
+    items.forEach((project) => {
+        if (project.category === 'Design') {
+            if (current.length > 0 && current[0].category !== 'Design') {
+                blocks.push(current)
+                current = []
+            }
+
+            current.push(project)
+            return
+        }
+
+        if (current.length > 0) {
+            blocks.push(current)
+            current = []
+        }
+
+        blocks.push([project])
+    })
+
+    if (current.length > 0) {
+        blocks.push(current)
+    }
+
+    return blocks
+}
+
 export function ProjectsPage({ language }: { language: 'en' | 'id' }) {
     const [projectFilter, setProjectFilter] = useState<'All' | ProjectCategory>('All')
     const [selected, setSelected] = useState<Project | null>(null)
@@ -32,6 +62,8 @@ export function ProjectsPage({ language }: { language: 'en' | 'id' }) {
     const filteredProjects = projectFilter === 'All'
         ? projects
         : projects.filter((project) => project.category === projectFilter)
+
+    const mobileProjectBlocks = buildMobileProjectBlocks(filteredProjects)
 
     return (
         <section className="section projects projects-page">
@@ -61,10 +93,56 @@ export function ProjectsPage({ language }: { language: 'en' | 'id' }) {
                         <DesignProjectCard key={project.id} project={project} onSelect={setSelected} />
                     ))}
                 </div>
+            ) : projectFilter === 'All' ? (
+                <div className="project-grid mobile-project-flow">
+                    {mobileProjectBlocks.map((block, blockIndex) => {
+                        const firstProject = block[0]
+
+                        if (firstProject.category === 'Design') {
+                            return (
+                                <div
+                                    key={`design-block-${firstProject.id ?? blockIndex}`}
+                                    className={`mobile-design-block ${block.length === 1 ? 'single' : ''}`}
+                                >
+                                    {block.map((project) => (
+                                        <DesignProjectCard key={project.id} project={project} onSelect={setSelected} />
+                                    ))}
+                                </div>
+                            )
+                        }
+
+                        return block.map((project) => (
+                            <article
+                                className="project-card"
+                                key={project.id}
+                                onClick={() => setSelected(project)}
+                                tabIndex={0}
+                                onKeyDown={(event) => event.key === 'Enter' && setSelected(project)}
+                            >
+                                <div className="project-image" style={{ backgroundColor: project.fallbackColor }}>
+                                    <img loading="lazy" src={project.image} alt={`${project.title} project preview`} onError={(event) => { event.currentTarget.style.opacity = '0' }} />
+                                    <span>{project.category}</span>
+                                </div>
+                                <div className="project-info">
+                                    <div className="project-meta">
+                                        <span>{project.type[language]}</span>
+                                        <span>{project.year}</span>
+                                    </div>
+                                    <h3>{project.title}</h3>
+                                    <p>{project.description[language]}</p>
+                                    <div className="tech-row">
+                                        {project.tech.map((tech) => <small key={tech}>{tech}</small>)}
+                                    </div>
+                                    <button className="card-link">{t.projects.view} <span>↗</span></button>
+                                </div>
+                            </article>
+                        ))
+                    })}
+                </div>
             ) : (
                 <div className="project-grid">
                     {filteredProjects.map((project) => (
-                        project.category === 'Design' ? <DesignProjectCard key={project.id} project={project} onSelect={setSelected} /> : <article
+                        <article
                             className="project-card"
                             key={project.id}
                             onClick={() => setSelected(project)}

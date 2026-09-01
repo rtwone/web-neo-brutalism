@@ -161,7 +161,7 @@ export function SpinViewPage({ language }: { language: 'id' | 'en' }) {
     return (
         <main className="spin-view-page">
             <section className="spin-view-heading">
-                <div><span className="eyebrow"><span className="eyebrow-mark" aria-hidden="true">✶</span> MEDIA TOOL / 01</span><h1>Spin View<i>✦</i></h1><p>{copy.description}</p></div>
+                <div><span className="eyebrow"><span className="eyebrow-mark" aria-hidden="true">✶</span> MEDIA TOOL</span><h1>Spin View<i>✦</i></h1><p>{copy.description}</p></div>
                 <div className="spin-view-stamp" aria-hidden="true">META<br /><b>CAM</b><br />02</div>
             </section>
 
