@@ -6,6 +6,7 @@ import { VisitorStats } from './components/VisitorStats'
 import { NotFoundPage } from './pages/notFound.tsx'
 import { ProjectsPage } from './pages/projects.tsx'
 import { TwibbonPage } from './pages/twibbon.tsx'
+import { SpinViewPage } from './pages/spinView.tsx'
 import './App.css'
 
 type ContactIconName = 'mail' | 'github' | 'instagram' | 'linkedin'
@@ -244,7 +245,8 @@ function App() {
   const currentPath = window.location.pathname.replace(/\/$/, '') || '/'
   const isProjectsPage = currentPath === '/projects'
   const isTwibbonPage = currentPath === '/twibbon'
-  const isUnknownPage = !['/', '/projects', '/twibbon'].includes(currentPath)
+  const isSpinViewPage = currentPath === '/spin-view'
+  const isUnknownPage = !['/', '/projects', '/twibbon', '/spin-view'].includes(currentPath)
   const designProjects = projects.filter((project) => project.category === 'Design')
   const developmentProjects = projects.filter((project) => project.category === 'Development')
 
@@ -279,7 +281,7 @@ function App() {
             <a
               className={activeSection === key ? 'active' : ''}
               key={key}
-              href={`${isProjectsPage || isTwibbonPage ? '/' : ''}#${key === 'home' ? 'home' : key}`}
+              href={`${isProjectsPage || isTwibbonPage || isSpinViewPage ? '/' : ''}#${key === 'home' ? 'home' : key}`}
               onClick={() => {
                 pendingNavigation.current = key
                 setActiveSection(key)
@@ -311,7 +313,9 @@ function App() {
       </header>
 
       <main>
-        {isTwibbonPage ? (
+        {isSpinViewPage ? (
+          <SpinViewPage language={language} />
+        ) : isTwibbonPage ? (
           <TwibbonPage />
         ) : isProjectsPage ? (
           <ProjectsPage language={language} />

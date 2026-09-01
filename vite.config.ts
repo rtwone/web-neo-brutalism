@@ -4,6 +4,8 @@ import handler from './api/contact.js'
 import type { VercelRequest, VercelResponse } from './api/contact.js'
 import statsHandler from './api/stats.js'
 import type { VercelRequest as StatsRequest, VercelResponse as StatsResponse } from './api/stats.js'
+import spinViewHandler from './api/spin-view.js'
+import type { VercelRequest as SpinRequest, VercelResponse as SpinResponse } from './api/spin-view.js'
 
 function loadRuntimeEnv() {
   const environment = loadEnv('', process.cwd(), '')
@@ -98,7 +100,25 @@ function statsApi(): Plugin {
   }
 }
 
+function spinViewApi(): Plugin {
+  return {
+    name: 'local-spin-view-api',
+    configureServer(server) {
+      server.middlewares.use('/spin-view', (request, response, next) => {
+        if (request.method !== 'POST') { next(); return }
+        const apiResponse: SpinResponse = {
+          status: (status: number) => { response.statusCode = status; return apiResponse },
+          setHeader: (name: string, value: string) => response.setHeader(name, value),
+          end: (body?: string | Buffer) => response.end(body),
+        }
+        spinViewHandler({ method: request.method, headers: request.headers, pipe: (stream) => request.pipe(stream) } satisfies SpinRequest, apiResponse)
+          .catch(() => { if (!response.writableEnded) { response.statusCode = 500; response.end(JSON.stringify({ error: 'Media gagal diproses.' })) } })
+      })
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), contactApi(), statsApi()],
+  plugins: [react(), contactApi(), statsApi(), spinViewApi()],
 })

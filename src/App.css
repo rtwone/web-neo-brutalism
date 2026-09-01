@@ -270,6 +270,498 @@ button {
   background-image: linear-gradient(rgba(244, 241, 233, .035) 1px, transparent 1px), linear-gradient(90deg, rgba(244, 241, 233, .035) 1px, transparent 1px);
 }
 
+.spin-view-page {
+  width: min(1180px, 90vw);
+  margin: 0 auto;
+  padding: 92px 0 110px;
+}
+
+.spin-view-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 32px;
+  margin-bottom: 58px;
+}
+
+.spin-view-heading h1 {
+  margin: 18px 0 12px;
+  font-size: clamp(54px, 8vw, 104px);
+  line-height: .88;
+  letter-spacing: -5px;
+}
+
+.spin-view-heading h1 i {
+  color: #f05252;
+  font-size: .46em;
+  vertical-align: top;
+  margin-left: 8px;
+}
+
+.spin-view-heading p {
+  max-width: 520px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+.spin-view-stamp {
+  flex: 0 0 auto;
+  border: 2px solid var(--line);
+  background: var(--yellow);
+  box-shadow: 7px 7px 0 var(--ink);
+  padding: 18px;
+  font: 500 13px/1.05 var(--mono);
+  transform: rotate(5deg);
+  text-align: center;
+}
+
+.spin-view-stamp b {
+  font: 700 28px/1 var(--display);
+}
+
+.spin-view-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 28px;
+}
+
+.spin-view-panel,
+.spin-result {
+  border: 2px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 28px;
+}
+
+.spin-view-panel-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 2px solid var(--line);
+  padding-bottom: 16px;
+  margin-bottom: 22px;
+}
+
+.spin-view-panel-heading span,
+.spin-result-heading>span {
+  color: var(--muted);
+  font: 500 11px var(--mono);
+}
+
+.spin-view-panel-heading h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.spin-options-panel .spin-options-heading {
+  margin-top: 0;
+}
+
+.spin-dropzone {
+  min-height: 220px;
+  padding: 28px;
+  border: 2px dashed var(--line);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 10px;
+  cursor: pointer;
+  background: var(--bg);
+}
+
+.spin-dropzone.is-dragging,
+.spin-dropzone:hover {
+  background: var(--blue);
+}
+
+.spin-dropzone input {
+  display: none;
+}
+
+.spin-upload-mark {
+  font-size: 35px;
+  line-height: 1;
+}
+
+.spin-dropzone strong {
+  font-size: 19px;
+}
+
+.spin-dropzone small,
+.spin-file-row small,
+.spin-size-options small {
+  color: var(--muted);
+  font: 11px var(--mono);
+}
+
+.spin-dropzone .button {
+  margin-top: 8px;
+}
+
+.spin-file-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 0 25px;
+  border-bottom: 2px solid var(--line);
+}
+
+.spin-file-row div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.spin-file-row strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spin-file-row .text-link {
+  appearance: none;
+  border: 2px solid var(--line);
+  background: #f05252;
+  box-shadow: none;
+  padding: 9px 13px;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.spin-file-row .text-link:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--ink);
+  color: var(--ink);
+  background: #f05252;
+}
+
+.spin-file-row .text-link:active {
+  transform: translate(0, 0);
+  box-shadow: 0 0 0 var(--ink);
+}
+
+.spin-options-heading {
+  margin-top: 28px;
+}
+
+.spin-size-options {
+  display: grid;
+  gap: 10px;
+}
+
+.spin-size-options label {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  border: 2px solid var(--line);
+  padding: 14px;
+  cursor: pointer;
+  transition: transform .2s ease, box-shadow .2s ease, background-color .2s ease;
+}
+
+.spin-size-options label:hover {
+  transform: translate(-3px, -3px);
+  box-shadow: 3px 3px 0 var(--ink);
+  background: var(--blue);
+}
+
+.spin-size-options label.selected {
+  background: var(--green);
+}
+
+.spin-size-options label.disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.spin-size-options input {
+  accent-color: var(--ink);
+  margin-top: 4px;
+}
+
+.spin-size-options span {
+  display: grid;
+  gap: 6px;
+}
+
+.spin-process-button {
+  width: 100%;
+  justify-content: space-between;
+  margin-top: 22px;
+}
+
+.spin-process-button:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.spin-message {
+  color: #237440;
+  font-size: 13px;
+  margin: 16px 0 0;
+}
+
+.spin-message.error {
+  color: #c43838;
+}
+
+.spin-preview-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.spin-preview-frame {
+  min-height: 430px;
+  background: var(--bg);
+  border: 2px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.spin-preview-frame:focus-visible {
+  outline: 3px solid #438bd2;
+  outline-offset: 3px;
+}
+
+#spin-file {
+  display: none;
+}
+
+.spin-preview-frame img,
+.spin-preview-frame video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-height: 500px;
+  object-fit: contain;
+}
+
+.spin-preview-frame.is-custom {
+  min-height: 0;
+  aspect-ratio: 3 / 4;
+}
+
+.spin-preview-frame img.is-custom {
+  object-fit: cover;
+}
+
+.spin-empty-preview {
+  text-align: center;
+  color: var(--muted);
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+
+.spin-empty-preview span {
+  font-size: 54px;
+  color: var(--ink);
+}
+
+.spin-upload-icon {
+  width: 52px;
+  height: 52px;
+  color: var(--ink);
+}
+
+.spin-empty-preview b {
+  color: var(--ink);
+  font-size: 25px;
+  line-height: .9;
+}
+
+.spin-empty-preview small {
+  font: 11px var(--mono);
+}
+
+.spin-camera-label {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 11px;
+  margin-top: 20px;
+  font: 12px var(--mono);
+}
+
+.spin-camera-label>div {
+  display: grid;
+  grid-template-columns: 72px 90px minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+}
+
+.spin-camera-label span {
+  color: var(--muted);
+  font: 11px var(--mono);
+  letter-spacing: .04em;
+}
+
+.spin-camera-label strong {
+  text-align: left;
+  color: var(--blue);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spin-camera-label s {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .spin-camera-label>div {
+    grid-template-columns: 58px 75px minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .spin-camera-label strong,
+  .spin-camera-label s {
+    font-size: 10px;
+  }
+}
+
+.spin-metadata-diff {
+  margin-top: 20px;
+  display: grid;
+  gap: 11px;
+}
+
+.spin-metadata-diff div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+  align-items: baseline;
+  font: 13px var(--mono);
+}
+
+.spin-metadata-diff s {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spin-metadata-diff strong {
+  text-align: right;
+  overflow-wrap: anywhere;
+  color: var(--blue);
+}
+
+.spin-result {
+  margin-top: 48px;
+  background: var(--pink);
+}
+
+.spin-result-heading h2 {
+  margin: 14px 0 6px;
+  font-size: 38px;
+}
+
+.spin-result-heading p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.spin-result-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 18px;
+  align-items: end;
+  margin-top: 28px;
+}
+
+.spin-result-grid>div {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.spin-result-grid span {
+  font: 11px var(--mono);
+}
+
+.spin-result-grid b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spin-result-grid small {
+  color: var(--muted);
+  font: 11px var(--mono);
+}
+
+.spin-result-actions {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 28px;
+}
+
+@media (max-width: 800px) {
+  .spin-view-page {
+    width: min(100% - 40px, 600px);
+    padding-top: 70px;
+  }
+
+  .spin-view-heading {
+    margin-bottom: 40px;
+  }
+
+  .spin-view-stamp {
+    display: none;
+  }
+
+  .spin-view-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .spin-preview-frame {
+    min-height: 300px;
+  }
+
+  .spin-result-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .spin-result-grid .button {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 480px) {
+  .spin-view-page {
+    width: min(100% - 28px, 600px);
+  }
+
+  .spin-view-panel,
+  .spin-result {
+    padding: 18px;
+  }
+
+  .spin-view-heading h1 {
+    letter-spacing: -3px;
+  }
+
+  .spin-result-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .spin-result-grid .button {
+    grid-column: auto;
+  }
+}
+
 .navbar {
   height: 64px;
   padding: 0 max(5vw, 24px);

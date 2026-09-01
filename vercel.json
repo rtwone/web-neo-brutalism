@@ -1,4 +1,13 @@
 {
+    "routes": [
+        {
+            "src": "/spin-view",
+            "methods": [
+                "POST"
+            ],
+            "dest": "/api/spin-view"
+        }
+    ],
     "rewrites": [
         {
             "source": "/((?!api(?:/|$)).*)",
