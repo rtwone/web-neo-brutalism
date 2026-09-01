@@ -24,6 +24,10 @@ function DesignProjectCard({ project, onSelect }: { project: Project; onSelect: 
     )
 }
 
+function isRegularProject(project: Project): project is Extract<Project, { category: 'Development' | 'Other' }> {
+    return project.category !== 'Design'
+}
+
 function buildMobileProjectBlocks(items: Project[]) {
     const blocks: Project[][] = []
     let current: Project[] = []
@@ -119,10 +123,16 @@ export function ProjectsPage({ language }: { language: 'en' | 'id' }) {
             ) : projectFilter === 'All' ? (
                 <>
                     <div className="project-grid desktop-project-grid">
-                        {filteredProjects.map((project) => (
-                            project.category === 'Design' ? (
-                                <DesignProjectCard key={project.id} project={project} onSelect={setSelected} />
-                            ) : (
+                        {filteredProjects.map((project) => {
+                            if (project.category === 'Design') {
+                                return <DesignProjectCard key={project.id} project={project} onSelect={setSelected} />
+                            }
+
+                            if (!isRegularProject(project)) {
+                                return null
+                            }
+
+                            return (
                                 <article
                                     className="project-card"
                                     key={project.id}
@@ -148,7 +158,7 @@ export function ProjectsPage({ language }: { language: 'en' | 'id' }) {
                                     </div>
                                 </article>
                             )
-                        ))}
+                        })}
                     </div>
 
                     <div className="project-grid mobile-project-flow">
@@ -168,63 +178,79 @@ export function ProjectsPage({ language }: { language: 'en' | 'id' }) {
                                 )
                             }
 
-                            return block.map((project) => (
-                                <article
-                                    className="project-card"
-                                    key={project.id}
-                                    onClick={() => setSelected(project)}
-                                    tabIndex={0}
-                                    onKeyDown={(event) => event.key === 'Enter' && setSelected(project)}
-                                >
-                                    <div className="project-image" style={{ backgroundColor: project.fallbackColor }}>
-                                        <img loading="lazy" src={project.image} alt={`${project.title} project preview`} onError={(event) => { event.currentTarget.style.opacity = '0' }} />
-                                        <span>{project.category}</span>
-                                    </div>
-                                    <div className="project-info">
-                                        <div className="project-meta">
-                                            <span>{project.type[language]}</span>
-                                            <span>{project.year}</span>
+                            return block.map((project) => {
+                                if (!isRegularProject(project)) {
+                                    return null
+                                }
+
+                                return (
+                                    <article
+                                        className="project-card"
+                                        key={project.id}
+                                        onClick={() => setSelected(project)}
+                                        tabIndex={0}
+                                        onKeyDown={(event) => event.key === 'Enter' && setSelected(project)}
+                                    >
+                                        <div className="project-image" style={{ backgroundColor: project.fallbackColor }}>
+                                            <img loading="lazy" src={project.image} alt={`${project.title} project preview`} onError={(event) => { event.currentTarget.style.opacity = '0' }} />
+                                            <span>{project.category}</span>
                                         </div>
-                                        <h3>{project.title}</h3>
-                                        <p>{project.description[language]}</p>
-                                        <div className="tech-row">
-                                            {project.tech.map((tech) => <small key={tech}>{tech}</small>)}
+                                        <div className="project-info">
+                                            <div className="project-meta">
+                                                <span>{project.type[language]}</span>
+                                                <span>{project.year}</span>
+                                            </div>
+                                            <h3>{project.title}</h3>
+                                            <p>{project.description[language]}</p>
+                                            <div className="tech-row">
+                                                {project.tech.map((tech) => <small key={tech}>{tech}</small>)}
+                                            </div>
+                                            <button className="card-link">{t.projects.view} <span>↗</span></button>
                                         </div>
-                                        <button className="card-link">{t.projects.view} <span>↗</span></button>
-                                    </div>
-                                </article>
-                            ))
+                                    </article>
+                                )
+                            })
                         })}
                     </div>
                 </>
             ) : (
                 <div className="project-grid desktop-project-grid">
-                    {filteredProjects.map((project) => (
-                        <article
-                            className="project-card"
-                            key={project.id}
-                            onClick={() => setSelected(project)}
-                            tabIndex={0}
-                            onKeyDown={(event) => event.key === 'Enter' && setSelected(project)}
-                        >
-                            <div className="project-image" style={{ backgroundColor: project.fallbackColor }}>
-                                <img loading="lazy" src={project.image} alt={`${project.title} project preview`} onError={(event) => { event.currentTarget.style.opacity = '0' }} />
-                                <span>{project.category}</span>
-                            </div>
-                            <div className="project-info">
-                                <div className="project-meta">
-                                    <span>{project.type[language]}</span>
-                                    <span>{project.year}</span>
+                    {filteredProjects.map((project) => {
+                        if (project.category === 'Design') {
+                            return null
+                        }
+
+                        if (!isRegularProject(project)) {
+                            return null
+                        }
+
+                        return (
+                            <article
+                                className="project-card"
+                                key={project.id}
+                                onClick={() => setSelected(project)}
+                                tabIndex={0}
+                                onKeyDown={(event) => event.key === 'Enter' && setSelected(project)}
+                            >
+                                <div className="project-image" style={{ backgroundColor: project.fallbackColor }}>
+                                    <img loading="lazy" src={project.image} alt={`${project.title} project preview`} onError={(event) => { event.currentTarget.style.opacity = '0' }} />
+                                    <span>{project.category}</span>
                                 </div>
-                                <h3>{project.title}</h3>
-                                <p>{project.description[language]}</p>
-                                <div className="tech-row">
-                                    {project.tech.map((tech) => <small key={tech}>{tech}</small>)}
+                                <div className="project-info">
+                                    <div className="project-meta">
+                                        <span>{project.type[language]}</span>
+                                        <span>{project.year}</span>
+                                    </div>
+                                    <h3>{project.title}</h3>
+                                    <p>{project.description[language]}</p>
+                                    <div className="tech-row">
+                                        {project.tech.map((tech) => <small key={tech}>{tech}</small>)}
+                                    </div>
+                                    <button className="card-link">{t.projects.view} <span>↗</span></button>
                                 </div>
-                                <button className="card-link">{t.projects.view} <span>↗</span></button>
-                            </div>
-                        </article>
-                    ))}
+                            </article>
+                        )
+                    })}
                 </div>
             )}
 
