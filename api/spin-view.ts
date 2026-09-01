@@ -9,7 +9,6 @@ import { pipeline } from 'node:stream/promises'
 import { randomUUID } from 'node:crypto'
 import { createRequire } from 'node:module'
 import sharp from 'sharp'
-import { ExifTool } from 'exiftool-vendored'
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024
 const execFileAsync = promisify(execFile)
@@ -68,21 +67,9 @@ const detectKind = async (path: string, mime: string, name: string) => {
     return { kind: 'image' as const, format: isPng ? '.png' : isJpeg ? '.jpg' : extension }
 }
 
-const resolution = async (path: string, kind: 'image' | 'video', tool: ExifTool) => {
-    if (kind === 'image') { const metadata = await sharp(path).metadata(); return metadata.width && metadata.height ? `${metadata.width} × ${metadata.height}` : 'Tidak diketahui' }
-    const tags = await tool.read(path)
-    return tags.ImageWidth && tags.ImageHeight ? `${tags.ImageWidth} × ${tags.ImageHeight}` : 'Video asli'
-}
-
-const originalCamera = async (path: string, kind: 'image' | 'video', tool: ExifTool) => {
-    const tags = await tool.read(path) as Record<string, unknown>
-    const makeKeys = kind === 'image' ? ['Make', 'EXIF:Make', 'XMP:Make'] : ['Make', 'QuickTime:Make', 'UserData:Make', 'Keys:Make']
-    const modelKeys = kind === 'image' ? ['Model', 'EXIF:Model', 'XMP:Model'] : ['Model', 'QuickTime:Model', 'UserData:Model', 'Keys:Model']
-    const findTag = (key: string) => {
-        const value = tags[key]
-        return typeof value === 'string' && value.trim() ? value.trim() : ''
-    }
-    return { make: makeKeys.map(findTag).find(Boolean) || 'Tidak tersedia', model: modelKeys.map(findTag).find(Boolean) || 'Tidak tersedia' }
+const resolution = async (path: string) => {
+    const metadata = await sharp(path).metadata()
+    return metadata.width && metadata.height ? `${metadata.width} × ${metadata.height}` : 'Tidak diketahui'
 }
 
 const require = createRequire(import.meta.url)
@@ -200,46 +187,27 @@ export const config = { api: { bodyParser: false } }
 export default async function handler(request: VercelRequest, response: VercelResponse) {
     if (request.method !== 'POST') { response.setHeader('Allow', 'POST'); return json(response, 405, 'Method tidak diizinkan.') }
     const directory = await mkdtemp(join(tmpdir(), 'spin-view-'))
-    const tool = new ExifTool()
     try {
         const { upload, size } = await parseUpload(request, directory)
         const detected = await detectKind(upload.path, upload.mime, upload.name)
         const { kind } = detected
-        const originalResolution = await resolution(upload.path, kind, tool)
-        const originalCameraInfo = await originalCamera(upload.path, kind, tool)
+        const originalResolution = await resolution(upload.path)
         const inputExtension = extname(upload.name).toLowerCase()
         const outputExtension = size === 'custom' ? '.jpg' : detected.format
         const outputName = `${basename(upload.name, inputExtension).toUpperCase()}_METASPIN_BY_IRFVNNY${outputExtension.toUpperCase()}`
         const outputPath = join(directory, outputName)
         if (kind === 'image' && size === 'custom') {
-            await sharp(upload.path).rotate().resize(3024, 4032, { fit: 'cover', position: 'centre' }).withMetadata().composite([{ input: watermark(3024, 4032) }]).jpeg({ quality: 95 }).toFile(outputPath)
+            await sharp(upload.path).rotate().resize(3024, 4032, { fit: 'cover', position: 'centre' }).withMetadata({ exif: { IFD0: { Make: 'Meta AI', Model: 'Ray-Ban Meta Smart Glasses 2' } } }).composite([{ input: watermark(3024, 4032) }]).jpeg({ quality: 95 }).toFile(outputPath)
         } else {
             const metadata = await sharp(upload.path).metadata()
             if (!metadata.width || !metadata.height) throw new Error('Gagal membaca ukuran foto.')
-            const image = sharp(upload.path).withMetadata().composite([{ input: watermark(metadata.width, metadata.height) }])
+            const image = sharp(upload.path).withMetadata({ exif: { IFD0: { Make: 'Meta AI', Model: 'Ray-Ban Meta Smart Glasses 2' } } }).composite([{ input: watermark(metadata.width, metadata.height) }])
             if (detected.format === '.png') await image.png().toFile(outputPath)
             else await image.jpeg({ quality: 95 }).toFile(outputPath)
         }
-        const cameraTags = kind === 'image'
-            ? { 'EXIF:Make': 'Meta AI', 'EXIF:Model': 'Ray-Ban Meta Smart Glasses 2', 'XMP:Make': 'Meta AI', 'XMP:Model': 'Ray-Ban Meta Smart Glasses 2' }
-            : {
-                Make: 'Meta AI',
-                Model: 'Ray-Ban Meta Smart Glasses 2',
-                'QuickTime:Make': 'Meta AI',
-                'QuickTime:Model': 'Ray-Ban Meta Smart Glasses 2',
-                'UserData:Make': 'Meta AI',
-                'UserData:Model': 'Ray-Ban Meta Smart Glasses 2',
-                'Keys:Make': 'Meta AI',
-                'Keys:Model': 'Ray-Ban Meta Smart Glasses 2',
-            }
-        if (kind === 'image') {
-            await tool.write(outputPath, cameraTags as never, {
-                writeArgs: ['-overwrite_original', '-P']
-            })
-        }
-        const outputResolution = await resolution(outputPath, kind, tool)
+        const outputResolution = await resolution(outputPath)
         const file = await readFile(outputPath)
-        const info = Buffer.from(JSON.stringify({ originalName: upload.name, format: detected.format.slice(1).toUpperCase(), originalResolution, outputResolution, originalMake: originalCameraInfo.make, originalModel: originalCameraInfo.model, fileName: outputName })).toString('base64')
+        const info = Buffer.from(JSON.stringify({ originalName: upload.name, format: detected.format.slice(1).toUpperCase(), originalResolution, outputResolution, originalMake: 'Metadata asli', originalModel: 'Metadata asli', fileName: outputName })).toString('base64')
         const contentType = outputExtension === '.png' ? 'image/png' : outputExtension === '.jpg' || outputExtension === '.jpeg' ? 'image/jpeg' : outputExtension === '.mov' ? 'video/quicktime' : upload.mime
         response.status(200); response.setHeader('Content-Type', contentType); response.setHeader('Content-Disposition', `attachment; filename="${outputName}"`); response.setHeader('X-Spin-View-Info', info); response.end(file)
     } catch (error) {
@@ -248,6 +216,5 @@ export default async function handler(request: VercelRequest, response: VercelRe
         return json(response, 422, metadataError ? 'Metadata kamera tidak dapat ditulis. Silakan coba lagi.' : message.includes('Input') ? 'Gagal melakukan resize foto.' : message)
     } finally {
         await rm(directory, { recursive: true, force: true })
-        await tool.end()
     }
 }
