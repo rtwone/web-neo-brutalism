@@ -896,6 +896,18 @@ footer a:hover {
   }
 }
 
+@media (max-width: 540px) {
+  .marquee {
+    font: 600 10px var(--mono);
+    padding: 9px 0;
+    border-block-width: 1px;
+  }
+
+  .marquee span {
+    animation-duration: 18s;
+  }
+}
+
 .eyebrow,
 .section-heading>span {
   font: 700 13px var(--mono);
@@ -2446,15 +2458,27 @@ footer a:hover {
   padding: 12px;
   outline: 0;
   resize: vertical;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.4;
+}
+
+.contact-form input::placeholder,
+.contact-form textarea::placeholder {
+  color: rgba(20, 20, 20, 0.6);
+  opacity: 1;
+  font-size: 14px;
 }
 
 @media (max-width: 540px) {
 
   .contact-form input,
   .contact-form textarea {
-    font-size: 14px;
+    font-size: 13px;
+  }
+
+  .contact-form input::placeholder,
+  .contact-form textarea::placeholder {
+    font-size: 12.5px;
   }
 }
 
