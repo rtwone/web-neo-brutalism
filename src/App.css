@@ -271,7 +271,8 @@ button {
 }
 
 .spin-view-page {
-  width: min(1180px, 90vw);
+  width: min(1180px, calc(100vw - 24px));
+  max-width: 100%;
   margin: 0 auto;
   padding: 92px 0 110px;
 }
@@ -333,6 +334,9 @@ button {
   background: var(--surface);
   box-shadow: var(--shadow);
   padding: 28px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .spin-view-panel-heading {
@@ -518,6 +522,9 @@ button {
 
 .spin-preview-frame {
   min-height: 430px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   background: var(--bg);
   border: 2px solid var(--line);
   display: flex;
@@ -539,8 +546,9 @@ button {
 .spin-preview-frame img,
 .spin-preview-frame video {
   display: block;
-  width: 100%;
-  height: 100%;
+  width: auto;
+  height: auto;
+  max-width: 100%;
   max-height: 500px;
   object-fit: contain;
 }
@@ -710,7 +718,7 @@ button {
 
 @media (max-width: 800px) {
   .spin-view-page {
-    width: min(100% - 40px, 600px);
+    width: min(100%, 600px);
     padding-top: 70px;
   }
 
@@ -724,10 +732,25 @@ button {
 
   .spin-view-workspace {
     grid-template-columns: 1fr;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .spin-view-panel,
+  .spin-result {
+    max-width: 100%;
   }
 
   .spin-preview-frame {
-    min-height: 300px;
+    min-height: clamp(220px, 48vw, 300px);
+  }
+
+  .spin-preview-frame img,
+  .spin-preview-frame video {
+    max-height: min(55vh, 400px);
+    max-width: 100%;
+    width: auto;
+    height: auto;
   }
 
   .spin-result-grid {
