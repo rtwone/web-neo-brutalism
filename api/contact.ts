@@ -1,6 +1,10 @@
+import { checkGlobalRateLimit } from '../lib/rate-limit.js'
+import { getRequestSignals } from '../lib/visitor.js'
+
 export type VercelRequest = {
     method?: string
     body?: Record<string, unknown>
+    headers?: Record<string, string | string[] | undefined>
 }
 
 export type VercelResponse = {
@@ -26,6 +30,12 @@ const escapeHtml = (value: string) =>
         .replace(/'/g, '&#039;')
 
 export default async function handler(request: VercelRequest, response: VercelResponse) {
+    const rate = checkGlobalRateLimit(getRequestSignals(request).ip)
+    if (!rate.allowed) {
+        response.setHeader('Retry-After', String(rate.retryAfter))
+        return json(response, 429, { error: 'Too many requests' })
+    }
+
     if (request.method !== 'POST') {
         response.setHeader('Allow', 'POST')
         return json(response, 405, { error: 'Method not allowed' })

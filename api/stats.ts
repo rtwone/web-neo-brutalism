@@ -1,5 +1,5 @@
 import { getRequestSignals, hashVisitorIp, requestedVisitorId } from '../lib/visitor.js'
-import { checkRateLimit } from '../lib/rate-limit.js'
+import { checkGlobalRateLimit, checkRateLimit } from '../lib/rate-limit.js'
 import { getStats, recordLike, recordView } from '../lib/stats.js'
 
 export type VercelRequest = {
@@ -42,6 +42,11 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
     try {
         const { ip } = getRequestSignals(request)
+        const globalRate = checkGlobalRateLimit(ip)
+        if (!globalRate.allowed) {
+            response.setHeader('Retry-After', String(globalRate.retryAfter))
+            return fail(response, 429, 'Too many requests')
+        }
         const visitorId = requestedVisitorId(request) || hashVisitorIp(ip)
         const page = pageFromRequest(request)
 

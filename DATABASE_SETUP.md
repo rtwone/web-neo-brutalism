@@ -26,7 +26,7 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 IP_HASH_SECRET=<long-random-secret>
 ```
 
-The rate-limit defaults are 5 Like requests per 60 seconds, 30 View requests per 60 seconds, and 180-minute View deduplication. They can be changed with the matching environment variables.
+The rate-limit defaults are 120 API requests per IP per 60 seconds globally, 5 Like requests per 60 seconds, 30 View requests per 60 seconds, and 180-minute View deduplication. They can be changed with the matching environment variables.
 
 ## 4. Configure Vercel
 
@@ -40,6 +40,8 @@ LIKE_RATE_LIMIT
 LIKE_RATE_WINDOW
 VIEW_RATE_LIMIT
 VIEW_RATE_WINDOW
+GLOBAL_RATE_LIMIT
+GLOBAL_RATE_WINDOW
 VIEW_DEDUP_MINUTES
 ```
 

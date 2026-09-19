@@ -9,6 +9,8 @@ import { pipeline } from 'node:stream/promises'
 import { randomUUID } from 'node:crypto'
 import { createRequire } from 'node:module'
 import sharp from 'sharp'
+import { checkGlobalRateLimit } from '../lib/rate-limit.js'
+import { getRequestSignals } from '../lib/visitor.js'
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024
 const execFileAsync = promisify(execFile)
@@ -186,6 +188,12 @@ export const validateVideo = async (path: string) => {
 
 export const config = { api: { bodyParser: false } }
 export default async function handler(request: VercelRequest, response: VercelResponse) {
+    const rate = checkGlobalRateLimit(getRequestSignals(request).ip)
+    if (!rate.allowed) {
+        response.setHeader('Retry-After', String(rate.retryAfter))
+        return json(response, 429, 'Terlalu banyak permintaan.')
+    }
+
     if (request.method !== 'POST') { response.setHeader('Allow', 'POST'); return json(response, 405, 'Method tidak diizinkan.') }
     const directory = await mkdtemp(join(tmpdir(), 'spin-view-'))
     try {
