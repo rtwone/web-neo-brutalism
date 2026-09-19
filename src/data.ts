@@ -625,5 +625,5 @@ export const twibbonConfig = {
     eyebrow: 'CREATIVE TOOL',
     templatePath: '/images/twibbon.png',
     captionTemplate: 'I\'M READY FOR FOSFAT 2026!\n\nSaya {nama} Prodi {prodi} bagian dari Generasi Baru Fakultas Teknik Universitas Wiraraja tahun 2026.\n\nMari bersama-sama mempererat silaturahmi, membangun solidaritas, dan menciptakan kolaborasi antar mahasiswa Fakultas Teknik Universitas Wiraraja.\n\n@teknik_wiraraja @sipil_unija @bemft_wiraraja @dpmft_wiraraja @himatika.unija @himatsu_universitas_wiraraja @si.unija @universitas_wiraraja\n\n#SalamSatuTeknik #BravoTeknik #TeknikUniversitasWiraraja #EngineeringWeek2026 #FOSFAT2026',
-    outputFileName: 'twibbon-fosfat.jpg',
+    outputFileName: 'twibbon-fosfat26',
 } as const
