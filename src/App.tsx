@@ -261,7 +261,7 @@ function App() {
 
   return (
     <div className="site-shell">
-      <header className="navbar">
+      {!isTwibbonPage && <header className="navbar">
         <div className="nav-brand">
           <a className="nav-brand-link" href={currentPath} onClick={handleBrandClick}>
             <span className="brand">IH<span>.</span></span>
@@ -310,7 +310,7 @@ function App() {
             </button>
           </div>
         </nav>
-      </header>
+      </header>}
 
       <main>
         {isSpinViewPage ? (

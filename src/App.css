@@ -1704,7 +1704,57 @@ footer a:hover {
 .twibbon-page {
   max-width: 1220px;
   margin: auto;
-  padding: 62px max(5vw, 24px) 110px;
+  padding: 20px max(5vw, 24px) 110px;
+}
+
+.twibbon-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 70px;
+  padding-bottom: 18px;
+  border-bottom: 2px solid var(--line);
+}
+
+.twibbon-brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 14px;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.twibbon-brand>span {
+  font: 900 25px/1 var(--display);
+  letter-spacing: -.08em;
+}
+
+.twibbon-brand-mark {
+  color: var(--red);
+}
+
+.twibbon-brand small {
+  color: var(--muted);
+  font: 700 10px var(--mono);
+  letter-spacing: .08em;
+}
+
+.twibbon-back-link {
+  color: var(--ink);
+  font: 700 11px var(--mono);
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.twibbon-back-link span {
+  color: var(--red);
+  font-size: 17px;
+  margin-left: 5px;
+}
+
+.twibbon-back-link:hover {
+  color: var(--red);
 }
 
 .twibbon-alert {
@@ -2201,7 +2251,7 @@ footer a:hover {
 
 @media (max-width: 800px) {
   .twibbon-page {
-    padding-top: 38px;
+    padding-top: 16px;
     padding-bottom: 75px;
   }
 
@@ -3127,6 +3177,17 @@ footer div {
 }
 
 @media (max-width:540px) {
+  .twibbon-page {
+    padding-top: 12px;
+  }
+
+  .twibbon-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 50px;
+  }
+
   .hero h1 {
     font-size: 58px;
   }

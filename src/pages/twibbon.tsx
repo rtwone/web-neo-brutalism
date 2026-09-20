@@ -229,6 +229,13 @@ export function TwibbonPage() {
 
     return (
         <main className="twibbon-page">
+            <header className="twibbon-header">
+                <a className="twibbon-brand" href="/twibbon" aria-label="Twibbon Maker home">
+                    <span>ENGINEERING WEEK - FOSFAT<span className="twibbon-brand-mark">'26</span></span>
+                    <small>TWIBBON MAKER</small>
+                </a>
+                <a className="twibbon-back-link" href="/">Kunjungi Developer <span aria-hidden="true">↗</span></a>
+            </header>
             {feedback && (
                 <div className="twibbon-alert" role="status" aria-live="polite">
                     <span>{feedback}</span>
