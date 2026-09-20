@@ -1,4 +1,4 @@
-import { getRequestSignals, hashVisitorIp, requestedVisitorId } from '../lib/visitor.js'
+import { getRequestSignals, hashVisitorIp } from '../lib/visitor.js'
 import { checkGlobalRateLimit, checkRateLimit } from '../lib/rate-limit.js'
 import { getStats, recordLike, recordView } from '../lib/stats.js'
 
@@ -47,7 +47,8 @@ export default async function handler(request: VercelRequest, response: VercelRe
             response.setHeader('Retry-After', String(globalRate.retryAfter))
             return fail(response, 429, 'Too many requests')
         }
-        const visitorId = requestedVisitorId(request) || hashVisitorIp(ip)
+
+        const visitorId = hashVisitorIp(ip)
         const page = pageFromRequest(request)
 
         if (request.method === 'GET') {
