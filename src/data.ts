@@ -113,6 +113,20 @@ export const translations = {
             subjectPlaceholder: 'Mari buat sesuatu',
             messagePlaceholder: 'Ceritakan tentang ideamu...',
         },
+        endpointDiscovery: {
+            kicker: 'Jelajahi',
+            title: 'Kunjungi Endpoint yang Mungkin Belum Kamu Ketahui',
+            twibbon: {
+                label: '/twibbon',
+                title: 'Buat Twibbon',
+                description: 'Alat generator twibbon untuk menambahkan foto, atur posisi, lalu download hasilnya secara langsung.',
+            },
+            spinView: {
+                label: '/spin-view',
+                title: 'Spin View',
+                description: 'Halaman interaktif untuk melihat tampilan putaran atau visual animasi yang dirancang untuk presentasi dan hiburan.',
+            },
+        },
         modal: {
             role: 'Peran',
             year: 'Tahun',
@@ -221,6 +235,20 @@ export const translations = {
             emailPlaceholder: 'hello@example.com',
             subjectPlaceholder: 'Let\'s build something',
             messagePlaceholder: 'Tell me a little about your idea...',
+        },
+        endpointDiscovery: {
+            kicker: 'Explore',
+            title: 'Visit endpoints you may not know yet',
+            twibbon: {
+                label: '/twibbon',
+                title: 'Create Twibbon',
+                description: 'A twibbon generator tool to add a photo, adjust the position, and download the result directly.',
+            },
+            spinView: {
+                label: '/spin-view',
+                title: 'Spin View',
+                description: 'An interactive page for viewing rotating displays or motion visuals designed for presentation and entertainment.',
+            },
         },
         modal: {
             role: 'Role',

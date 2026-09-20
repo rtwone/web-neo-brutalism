@@ -549,6 +549,27 @@ function App() {
               {formState === 'validation-error' && <p className="form-message error">{t.contact.error}</p>}
               {formState === 'send-error' && <p className="form-message error">{t.contact.sendError}</p>}
             </form>
+
+            <div className="endpoint-discovery">
+              <div className="endpoint-intro">
+                <span className="eyebrow">{t.endpointDiscovery.kicker}</span>
+                <h3>{t.endpointDiscovery.title}</h3>
+              </div>
+
+              <div className="endpoint-grid">
+                <a className="endpoint-card" href="/twibbon">
+                  <span className="endpoint-pill">{t.endpointDiscovery.twibbon.label}</span>
+                  <strong>{t.endpointDiscovery.twibbon.title}</strong>
+                  <p>{t.endpointDiscovery.twibbon.description}</p>
+                </a>
+
+                <a className="endpoint-card" href="/spin-view">
+                  <span className="endpoint-pill">{t.endpointDiscovery.spinView.label}</span>
+                  <strong>{t.endpointDiscovery.spinView.title}</strong>
+                  <p>{t.endpointDiscovery.spinView.description}</p>
+                </a>
+              </div>
+            </div>
           </section>
         </>}
       </main>
