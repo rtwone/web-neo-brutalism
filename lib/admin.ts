@@ -2,17 +2,12 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 
 const sessionDuration = 60 * 60 * 24 * 7
 
-const getAdminPassword = () => (process.env.ADMIN_PASSWORD ?? 'IrfanPortfolio2026!').trim()
 const secret = () => process.env.ADMIN_SESSION_SECRET || process.env.ADMIN_PASSWORD || ''
 
 const signature = (value: string) => createHmac('sha256', secret()).update(value).digest('base64url')
 
-export const isAdminPasswordValid = (password: unknown) => {
-    if (typeof password !== 'string') return false
-    const candidate = password.trim()
-    const expected = getAdminPassword()
-    return Boolean(expected) && candidate === expected
-}
+export const isAdminPasswordValid = (password: unknown) =>
+    typeof password === 'string' && Boolean(process.env.ADMIN_PASSWORD) && password === process.env.ADMIN_PASSWORD
 
 export const createAdminToken = () => {
     const expiresAt = Math.floor(Date.now() / 1000) + sessionDuration

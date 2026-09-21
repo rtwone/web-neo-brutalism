@@ -10,11 +10,6 @@ export default function handler(request: Request, response: Response) {
         return response.status(200).json({ authenticated })
     }
     if (request.method !== 'POST') return response.status(405).json({ error: 'Method not allowed' })
-    console.log('DEBUG admin login', {
-        envPassword: process.env.ADMIN_PASSWORD,
-        providedPassword: request.body?.password,
-        matches: process.env.ADMIN_PASSWORD === request.body?.password,
-    })
     if (!isAdminPasswordValid(request.body?.password)) return response.status(401).json({ error: 'Invalid credentials' })
     response.setHeader('Set-Cookie', adminCookie(createAdminToken()))
     return response.status(200).json({ success: true })

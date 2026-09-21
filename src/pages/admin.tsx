@@ -165,19 +165,28 @@ export function AdminPage() {
     const isEditorOpen = (section: NonNullable<EditorTarget>['section'], index: number) => editorTarget?.section === section && editorTarget.index === index
 
     const loadContent = async () => {
-        const response = await fetch('/api/admin/content')
+        const response = await fetch('/api/admin/content', { credentials: 'include' })
+        if (!response.ok) {
+            if (response.status === 401) return
+            return
+        }
         const data = await response.json() as { content?: SiteContent }
         if (data.content) setContent(normalizeContentImages({ ...defaultContent, ...data.content }))
     }
 
     useEffect(() => {
-        void loadContent()
         fetch('/api/admin/login', { credentials: 'include' })
             .then((response) => response.json())
             .then((data: { authenticated?: boolean }) => { if (data.authenticated) setAuthenticated(true) })
             .catch(() => undefined)
             .finally(() => setAuthChecked(true))
     }, [])
+
+    useEffect(() => {
+        if (authChecked && authenticated) {
+            void loadContent()
+        }
+    }, [authChecked, authenticated])
 
     useEffect(() => {
         if (adminSection === 'dashboard') return
@@ -196,6 +205,7 @@ export function AdminPage() {
         if (!response.ok) { setMessage('Password salah.'); return }
         setAuthenticated(true)
         setMessage('Login berhasil.')
+        await loadContent()
     }
 
     const logout = async () => {
