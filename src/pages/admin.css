@@ -328,6 +328,46 @@
     font-weight: 700;
 }
 
+.admin-password-field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.admin-password-field input {
+    flex: 1;
+}
+
+.admin-password-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border: 2px solid var(--line);
+    background: var(--yellow);
+    color: var(--ink);
+    cursor: pointer;
+    box-shadow: 3px 3px 0 var(--ink);
+    transition: transform .2s, box-shadow .2s;
+}
+
+.admin-password-toggle:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 5px 5px 0 var(--ink);
+}
+
+.admin-password-toggle svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
 .admin-page input,
 .admin-page textarea,
 .admin-page select {

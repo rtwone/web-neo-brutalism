@@ -15,7 +15,7 @@ const defaultSkill = (): Skill => ({
 })
 
 const defaultJourneyEntry = (): JourneyEntry => ({
-    period: '2026 - Sekarang',
+    period: '',
     title: '',
     subtitle: '',
     tone: 'yellow',
@@ -38,7 +38,7 @@ const defaultProject = (category: 'Development' | 'Design' | 'Other' = 'Developm
         category,
         title: '',
         type: { id: '', en: '' },
-        year: '2026',
+        year: '',
         image: '',
         fallbackColor: '#8ab4f0',
         description: { id: '', en: '' },
@@ -152,6 +152,7 @@ export function AdminPage() {
     const adminSection = window.location.pathname.split('/')[2] || 'dashboard'
     const pageTitle = adminSection === 'dashboard' ? 'Dashboard' : ({ about: 'About & Contact', education: 'Education', experience: 'Experience', socials: 'Social media', skills: 'Skills', projects: 'Projects', endpoints: 'Endpoints' }[adminSection] || 'Dashboard')
     const [password, setPassword] = useState('')
+    const [showPassword, setShowPassword] = useState(false)
     const [content, setContent] = useState<SiteContent>(() => normalizeContentImages(defaultContent))
     const [authenticated, setAuthenticated] = useState(false)
     const [authChecked, setAuthChecked] = useState(false)
@@ -192,7 +193,7 @@ export function AdminPage() {
             credentials: 'include',
             body: JSON.stringify({ password }),
         })
-        if (!response.ok) { setMessage('Password salah atau admin belum dikonfigurasi.'); return }
+        if (!response.ok) { setMessage('Password salah.'); return }
         setAuthenticated(true)
         setMessage('Login berhasil.')
     }
@@ -206,25 +207,73 @@ export function AdminPage() {
 
     const updateContent = (nextContent: SiteContent) => setContent(nextContent)
 
+    const isJourneyItemEmpty = (item: JourneyEntry) => !item.title.trim() && !item.period.trim() && !item.subtitle.trim() && !(item.badge ?? '').trim()
+    const isSocialItemEmpty = (item: SiteContent['socials'][number]) => !item.label.trim() && !item.url.trim()
+    const isSkillItemEmpty = (item: Skill) => !item.name.trim() && !item.mark.trim()
+    const isProjectItemEmpty = (item: Project) => {
+        if (item.category === 'Design') {
+            return !item.image.trim() && !(item.url ?? '').trim()
+        }
+
+        return !item.title.trim() && !item.year.trim() && !item.type.id.trim() && !item.type.en.trim() && !item.description.id.trim() && !item.description.en.trim() && !item.role.id.trim() && !item.role.en.trim() && item.tech.length === 0 && !(item.github ?? '').trim() && !(item.url ?? '').trim()
+    }
+
+    const closeEditor = (section: NonNullable<EditorTarget>['section'], index: number) => {
+        setContent((currentContent) => {
+            let nextContent = currentContent
+
+            if (section === 'education' || section === 'experience') {
+                const current = currentContent[section][index]
+                if (current && isJourneyItemEmpty(current)) {
+                    nextContent = { ...currentContent, [section]: currentContent[section].filter((_, itemIndex) => itemIndex !== index) }
+                }
+            }
+
+            if (section === 'social') {
+                const current = currentContent.socials[index]
+                if (current && isSocialItemEmpty(current)) {
+                    nextContent = { ...currentContent, socials: currentContent.socials.filter((_, itemIndex) => itemIndex !== index) }
+                }
+            }
+
+            if (section === 'skill') {
+                const current = currentContent.skills[index]
+                if (current && isSkillItemEmpty(current)) {
+                    nextContent = { ...currentContent, skills: currentContent.skills.filter((_, itemIndex) => itemIndex !== index) }
+                }
+            }
+
+            if (section === 'project') {
+                const current = currentContent.projects[index]
+                if (current && isProjectItemEmpty(current)) {
+                    nextContent = { ...currentContent, projects: currentContent.projects.filter((_, itemIndex) => itemIndex !== index) }
+                }
+            }
+
+            return nextContent
+        })
+        setEditorTarget(null)
+    }
+
     const confirmDelete = (label: string, remove: () => void) => {
         setDeleteConfirmation({ label, remove })
     }
 
     const addSocial = () => {
         const index = content.socials.length
-        updateContent({ ...content, socials: [...content.socials, { icon: 'mail', label: 'Email', url: 'mailto:example@email.com' }] })
+        setContent((currentContent) => ({ ...currentContent, socials: [...currentContent.socials, { icon: 'mail', label: '', url: '' }] }))
         setEditorTarget({ section: 'social', index })
     }
 
     const addSkill = () => {
         const index = content.skills.length
-        updateContent({ ...content, skills: [...content.skills, defaultSkill()] })
+        setContent((currentContent) => ({ ...currentContent, skills: [...currentContent.skills, defaultSkill()] }))
         setEditorTarget({ section: 'skill', index })
     }
 
     const addProject = () => {
         const index = content.projects.length
-        updateContent({ ...content, projects: [...content.projects, defaultProject('Development')] })
+        setContent((currentContent) => ({ ...currentContent, projects: [...currentContent.projects, defaultProject('Development')] }))
         setEditorTarget({ section: 'project', index })
     }
 
@@ -236,7 +285,7 @@ export function AdminPage() {
 
     const addJourneyEntry = (section: 'education' | 'experience') => {
         const index = content[section].length
-        updateContent({ ...content, [section]: [...content[section], defaultJourneyEntry()] })
+        setContent((currentContent) => ({ ...currentContent, [section]: [...currentContent[section], defaultJourneyEntry()] }))
         setEditorTarget({ section, index })
     }
 
@@ -304,7 +353,19 @@ export function AdminPage() {
                 <span className="eyebrow">ADMIN / PORTFOLIO CMS</span>
                 <h1>Panel Admin</h1>
                 <p>Masuk untuk mengelola konten portfolio.</p>
-                <label>Password<input autoFocus type="password" value={password} onChange={(event) => setPassword(event.target.value)} /></label>
+                <label>
+                    Password
+                    <div className="admin-password-field">
+                        <input autoFocus type={showPassword ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} />
+                        <button type="button" className="admin-password-toggle" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}>
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
+                                <circle cx="12" cy="12" r="3" />
+                                {showPassword && <path d="M3 3l18 18" />}
+                            </svg>
+                        </button>
+                    </div>
+                </label>
                 <button className="button primary" type="submit">Masuk <AdminIcon name="arrow" /></button>
                 {message && <p className="admin-message">{message}</p>}
             </form>
@@ -375,7 +436,7 @@ export function AdminPage() {
                             <h2>{section === 'education' ? 'Education' : 'Experience'}</h2>
                             <div className="admin-array-list">
                                 {content[section].map((item, index) => (
-                                    <div className="admin-list-entry" key={`${item.period}-${item.title}-${index}`}>
+                                    <div className="admin-list-entry" key={`${section}-${index}`}>
                                         <div className="admin-list-row">
                                             <button type="button" className="admin-list-button" onClick={() => setEditorTarget({ section, index })}>
                                                 <strong>{item.title || `${section === 'education' ? 'Education' : 'Experience'} #${index + 1}`}</strong>
@@ -384,7 +445,7 @@ export function AdminPage() {
                                             </button>
                                         </div>
                                         <div className={`admin-card admin-modal-card ${isEditorOpen(section, index) ? 'is-open' : ''}`}>
-                                            <div className="admin-card-top"><strong>{item.title || `${section === 'education' ? 'Education' : 'Experience'} #${index + 1}`}</strong><button type="button" className="close-button icon-button" onClick={() => setEditorTarget(null)} aria-label="Tutup editor" title="Tutup editor"><AdminIcon name="close" /></button></div>
+                                            <div className="admin-card-top"><strong>{item.title || `${section === 'education' ? 'Education' : 'Experience'} #${index + 1}`}</strong><button type="button" className="close-button icon-button" onClick={() => closeEditor(section, index)} aria-label="Tutup editor" title="Tutup editor"><AdminIcon name="close" /></button></div>
                                             <div className="admin-grid two-columns">
                                                 <label>Periode<input value={item.period} onChange={(event) => updateContent({ ...content, [section]: content[section].map((entry, itemIndex) => itemIndex === index ? { ...entry, period: event.target.value } : entry) })} /></label>
                                                 <label>Judul<input value={item.title} onChange={(event) => updateContent({ ...content, [section]: content[section].map((entry, itemIndex) => itemIndex === index ? { ...entry, title: event.target.value } : entry) })} /></label>
@@ -409,14 +470,14 @@ export function AdminPage() {
                         <h2>Sosial media</h2>
                         <div className="admin-array-list">
                             {content.socials.map((social, index) => (
-                                <div className="admin-list-entry" key={`${social.label}-${index}`}>
+                                <div className="admin-list-entry" key={`social-${index}`}>
                                     <div className="admin-list-row">
                                         <button type="button" className="admin-list-button" onClick={() => setEditorTarget({ section: 'social', index })}><strong>{social.label || `Social #${index + 1}`}</strong><span>{social.url}</span><b>↗</b></button>
                                     </div>
                                     <div className={`admin-card admin-modal-card ${isEditorOpen('social', index) ? 'is-open' : ''}`}>
                                         <div className="admin-card-top">
                                             <strong>Social #{index + 1}</strong>
-                                            <button type="button" className="close-button icon-button" onClick={() => setEditorTarget(null)} aria-label="Tutup editor" title="Tutup editor"><AdminIcon name="close" /></button>
+                                            <button type="button" className="close-button icon-button" onClick={() => closeEditor('social', index)} aria-label="Tutup editor" title="Tutup editor"><AdminIcon name="close" /></button>
                                         </div>
                                         <div className="admin-grid two-columns">
                                             <label>Label<input value={social.label} onChange={(event) => updateContent({ ...content, socials: content.socials.map((item, itemIndex) => itemIndex === index ? { ...item, label: event.target.value } : item) })} /></label>
@@ -437,14 +498,14 @@ export function AdminPage() {
                         <h2>Skills</h2>
                         <div className="admin-array-list">
                             {content.skills.map((skill, index) => (
-                                <div className="admin-list-entry" key={`${skill.name || 'skill'}-${index}`}>
+                                <div className="admin-list-entry" key={`skill-${index}`}>
                                     <div className="admin-list-row">
                                         <button type="button" className="admin-list-button" onClick={() => setEditorTarget({ section: 'skill', index })}><strong>{skill.name || `Skill #${index + 1}`}</strong><span>{skill.group} · {skill.mark || 'No mark'}</span><b>↗</b></button>
                                     </div>
                                     <div className={`admin-card admin-modal-card ${isEditorOpen('skill', index) ? 'is-open' : ''}`}>
                                         <div className="admin-card-top">
                                             <strong>Skill #{index + 1}</strong>
-                                            <button type="button" className="close-button icon-button" onClick={() => setEditorTarget(null)} aria-label="Tutup editor" title="Tutup editor"><AdminIcon name="close" /></button>
+                                            <button type="button" className="close-button icon-button" onClick={() => closeEditor('skill', index)} aria-label="Tutup editor" title="Tutup editor"><AdminIcon name="close" /></button>
                                         </div>
                                         <div className="admin-grid two-columns">
                                             <label>Nama<input value={skill.name} onChange={(event) => updateContent({ ...content, skills: content.skills.map((item, itemIndex) => itemIndex === index ? { ...item, name: event.target.value } : item) })} /></label>
@@ -498,7 +559,7 @@ export function AdminPage() {
                                     <div className={`admin-card admin-modal-card ${isEditorOpen('project', index) ? 'is-open' : ''}`}>
                                         <div className="admin-card-top">
                                             <strong>{project.category === 'Design' ? 'Design project' : project.title || `Project ${index + 1}`}</strong>
-                                            <button type="button" className="close-button icon-button" onClick={() => setEditorTarget(null)} aria-label="Tutup editor" title="Tutup editor"><AdminIcon name="close" /></button>
+                                            <button type="button" className="close-button icon-button" onClick={() => closeEditor('project', index)} aria-label="Tutup editor" title="Tutup editor"><AdminIcon name="close" /></button>
                                         </div>
 
                                         <div className="admin-grid two-columns">
