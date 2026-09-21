@@ -228,6 +228,12 @@ export function AdminPage() {
         setEditorTarget({ section: 'project', index })
     }
 
+    const updateProjectAt = (index: number, updater: (project: Project) => Project) => {
+        const updated = [...content.projects]
+        updated[index] = updater(updated[index])
+        updateContent({ ...content, projects: updated })
+    }
+
     const addJourneyEntry = (section: 'education' | 'experience') => {
         const index = content[section].length
         updateContent({ ...content, [section]: [...content[section], defaultJourneyEntry()] })
@@ -487,7 +493,7 @@ export function AdminPage() {
                             {content.projects.map((project, index) => (
                                 <div className="admin-list-entry" key={`${project.category}-${project.id ?? index}`}>
                                     <div className="admin-list-row">
-                                        <button type="button" className="admin-list-button" onClick={() => setEditorTarget({ section: 'project', index })}><strong>{project.category === 'Design' ? `Design project #${index + 1}` : project.title || `Project ${index + 1}`}</strong><span>{project.category} · {project.year || 'No year'}</span><b>↗</b></button>
+                                        <button type="button" className="admin-list-button" onClick={() => setEditorTarget({ section: 'project', index })}><strong>{project.category === 'Design' ? `Design project #${index + 1}` : project.title || `Project ${index + 1}`}</strong><span>{project.category === 'Design' ? 'Design project' : `${project.category} · ${project.year || 'No year'}`}</span><b>↗</b></button>
                                     </div>
                                     <div className={`admin-card admin-modal-card ${isEditorOpen('project', index) ? 'is-open' : ''}`}>
                                         <div className="admin-card-top">
@@ -507,10 +513,7 @@ export function AdminPage() {
                                                 <option value="Other">Other</option>
                                             </select></label>
                                             <label>Fallback color<input type="color" value={project.fallbackColor || '#f8d34f'} onChange={(event) => {
-                                                const updated = [...content.projects]
-                                                if (updated[index].category === 'Design') updated[index] = { ...updated[index], fallbackColor: event.target.value }
-                                                else updated[index] = { ...updated[index], fallbackColor: event.target.value }
-                                                updateContent({ ...content, projects: updated })
+                                                updateProjectAt(index, (current) => ({ ...current, fallbackColor: event.target.value }))
                                             }} /></label>
                                         </div>
 
@@ -519,16 +522,12 @@ export function AdminPage() {
                                                 <label>Project image<input type="file" accept="image/*" onChange={(event) => {
                                                     const file = event.target.files?.[0]
                                                     if (file) void uploadImage(file, (url) => {
-                                                        const updated = [...content.projects]
-                                                        updated[index] = { ...updated[index], image: url }
-                                                        updateContent({ ...content, projects: updated })
+                                                        updateProjectAt(index, (current) => (current.category === 'Design' ? { ...current, image: url } : current))
                                                     })
                                                     event.target.value = ''
                                                 }} disabled={uploading} />{project.image && <input className="admin-url-value" readOnly value={project.image} aria-label="Supabase image URL" />}</label>
                                                 <label>External URL<input value={project.url ?? ''} onChange={(event) => {
-                                                    const updated = [...content.projects]
-                                                    updated[index] = { ...updated[index], url: event.target.value }
-                                                    updateContent({ ...content, projects: updated })
+                                                    updateProjectAt(index, (current) => (current.category === 'Design' ? { ...current, url: event.target.value } : current))
                                                 }} /></label>
                                                 {project.image && <img className="admin-preview" src={project.image} alt="Project preview" />}
                                             </>
@@ -536,78 +535,54 @@ export function AdminPage() {
                                             <>
                                                 <div className="admin-grid two-columns">
                                                     <label>Judul<input value={project.title} onChange={(event) => {
-                                                        const updated = [...content.projects]
-                                                        updated[index] = { ...updated[index], title: event.target.value }
-                                                        updateContent({ ...content, projects: updated })
+                                                        updateProjectAt(index, (current) => (current.category === 'Design' ? current : { ...current, title: event.target.value }))
                                                     }} /></label>
                                                     <label>Year<input value={project.year} onChange={(event) => {
-                                                        const updated = [...content.projects]
-                                                        updated[index] = { ...updated[index], year: event.target.value }
-                                                        updateContent({ ...content, projects: updated })
+                                                        updateProjectAt(index, (current) => (current.category === 'Design' ? current : { ...current, year: event.target.value }))
                                                     }} /></label>
                                                 </div>
                                                 <div className="admin-grid two-columns">
                                                     <label>Type ID<input value={project.type.id} onChange={(event) => {
-                                                        const updated = [...content.projects]
-                                                        updated[index] = { ...updated[index], type: { ...updated[index].type, id: event.target.value } }
-                                                        updateContent({ ...content, projects: updated })
+                                                        updateProjectAt(index, (current) => (current.category === 'Design' ? current : { ...current, type: { ...current.type, id: event.target.value } }))
                                                     }} /></label>
                                                     <label>Type EN<input value={project.type.en} onChange={(event) => {
-                                                        const updated = [...content.projects]
-                                                        updated[index] = { ...updated[index], type: { ...updated[index].type, en: event.target.value } }
-                                                        updateContent({ ...content, projects: updated })
+                                                        updateProjectAt(index, (current) => (current.category === 'Design' ? current : { ...current, type: { ...current.type, en: event.target.value } }))
                                                     }} /></label>
                                                 </div>
                                                 <div className="admin-grid two-columns">
                                                     <label>Role ID<input value={project.role.id} onChange={(event) => {
-                                                        const updated = [...content.projects]
-                                                        updated[index] = { ...updated[index], role: { ...updated[index].role, id: event.target.value } }
-                                                        updateContent({ ...content, projects: updated })
+                                                        updateProjectAt(index, (current) => (current.category === 'Design' ? current : { ...current, role: { ...current.role, id: event.target.value } }))
                                                     }} /></label>
                                                     <label>Role EN<input value={project.role.en} onChange={(event) => {
-                                                        const updated = [...content.projects]
-                                                        updated[index] = { ...updated[index], role: { ...updated[index].role, en: event.target.value } }
-                                                        updateContent({ ...content, projects: updated })
+                                                        updateProjectAt(index, (current) => (current.category === 'Design' ? current : { ...current, role: { ...current.role, en: event.target.value } }))
                                                     }} /></label>
                                                 </div>
                                                 <div className="admin-grid two-columns">
                                                     <label>Description ID<textarea value={project.description.id} onChange={(event) => {
-                                                        const updated = [...content.projects]
-                                                        updated[index] = { ...updated[index], description: { ...updated[index].description, id: event.target.value } }
-                                                        updateContent({ ...content, projects: updated })
+                                                        updateProjectAt(index, (current) => (current.category === 'Design' ? current : { ...current, description: { ...current.description, id: event.target.value } }))
                                                     }} /></label>
                                                     <label>Description EN<textarea value={project.description.en} onChange={(event) => {
-                                                        const updated = [...content.projects]
-                                                        updated[index] = { ...updated[index], description: { ...updated[index].description, en: event.target.value } }
-                                                        updateContent({ ...content, projects: updated })
+                                                        updateProjectAt(index, (current) => (current.category === 'Design' ? current : { ...current, description: { ...current.description, en: event.target.value } }))
                                                     }} /></label>
                                                 </div>
                                                 <div className="admin-grid two-columns">
                                                     <label>Tech (pisah koma)<input value={project.tech.join(', ')} onChange={(event) => {
-                                                        const updated = [...content.projects]
-                                                        updated[index] = { ...updated[index], tech: event.target.value.split(',').map((item) => item.trim()).filter(Boolean) }
-                                                        updateContent({ ...content, projects: updated })
+                                                        updateProjectAt(index, (current) => (current.category === 'Design' ? current : { ...current, tech: event.target.value.split(',').map((item) => item.trim()).filter(Boolean) }))
                                                     }} /></label>
                                                     <label>Project image<input type="file" accept="image/*" onChange={(event) => {
                                                         const file = event.target.files?.[0]
                                                         if (file) void uploadImage(file, (url) => {
-                                                            const updated = [...content.projects]
-                                                            updated[index] = { ...updated[index], image: url }
-                                                            updateContent({ ...content, projects: updated })
+                                                            updateProjectAt(index, (current) => (current.category === 'Design' ? current : { ...current, image: url }))
                                                         })
                                                         event.target.value = ''
                                                     }} disabled={uploading} />{project.image && <input className="admin-url-value" readOnly value={project.image} aria-label="Supabase image URL" />}</label>
                                                 </div>
                                                 <div className="admin-grid two-columns">
                                                     <label>GitHub<input value={project.github ?? ''} onChange={(event) => {
-                                                        const updated = [...content.projects]
-                                                        updated[index] = { ...updated[index], github: event.target.value || undefined }
-                                                        updateContent({ ...content, projects: updated })
+                                                        updateProjectAt(index, (current) => (current.category === 'Design' ? current : { ...current, github: event.target.value || undefined }))
                                                     }} /></label>
                                                     <label>URL<input value={project.url ?? ''} onChange={(event) => {
-                                                        const updated = [...content.projects]
-                                                        updated[index] = { ...updated[index], url: event.target.value || undefined }
-                                                        updateContent({ ...content, projects: updated })
+                                                        updateProjectAt(index, (current) => (current.category === 'Design' ? current : { ...current, url: event.target.value || undefined }))
                                                     }} /></label>
                                                 </div>
                                                 {project.image && <img className="admin-preview" src={project.image} alt="Project preview" />}

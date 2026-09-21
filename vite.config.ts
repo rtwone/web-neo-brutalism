@@ -38,7 +38,10 @@ function contactApi(): Plugin {
                 response.setHeader('Content-Type', 'application/json')
                 response.end(JSON.stringify(body))
               },
-              setHeader: (name: string, value: string) => response.setHeader(name, value),
+              setHeader: (name: string, value: string) => {
+                response.setHeader(name, value)
+                return apiResponse
+              },
             }
 
             await handler({ method: request.method, body } satisfies VercelRequest, apiResponse)
@@ -83,7 +86,10 @@ function statsApi(): Plugin {
             response.setHeader('Content-Type', 'application/json')
             response.end(JSON.stringify(body))
           },
-          setHeader: (name: string, value: string) => response.setHeader(name, value),
+          setHeader: (name: string, value: string) => {
+            response.setHeader(name, value)
+            return apiResponse
+          },
         }
 
         statsHandler({
@@ -108,7 +114,10 @@ function spinViewApi(): Plugin {
         if (request.method !== 'POST') { next(); return }
         const apiResponse: SpinResponse = {
           status: (status: number) => { response.statusCode = status; return apiResponse },
-          setHeader: (name: string, value: string) => response.setHeader(name, value),
+          setHeader: (name: string, value: string) => {
+            response.setHeader(name, value)
+            return apiResponse
+          },
           end: (body?: string | Buffer) => response.end(body),
         }
         spinViewHandler({ method: request.method, headers: request.headers, pipe: (stream) => request.pipe(stream) } satisfies SpinRequest, apiResponse)
@@ -131,9 +140,12 @@ function adminApi(): Plugin {
         request.on('end', async () => {
           try {
             const body = chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) as Record<string, unknown> : undefined
-            const apiResponse = {
+            const apiResponse: any = {
               status: (status: number) => { response.statusCode = status; return apiResponse },
-              setHeader: (name: string, value: string) => response.setHeader(name, value),
+              setHeader: (name: string, value: string) => {
+                response.setHeader(name, value)
+                return apiResponse
+              },
               json: (value: object) => { response.setHeader('Content-Type', 'application/json'); response.end(JSON.stringify(value)) },
             }
             const headers = { ...request.headers, cookie: request.headers.cookie }
