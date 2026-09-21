@@ -118,7 +118,43 @@ function spinViewApi(): Plugin {
   }
 }
 
+function adminApi(): Plugin {
+  return {
+    name: 'local-admin-api',
+    configureServer(server) {
+      loadRuntimeEnv()
+      server.middlewares.use(async (request, response, next) => {
+        const url = new URL(request.url || '/', 'http://localhost')
+        if (!url.pathname.startsWith('/api/admin/')) { next(); return }
+        const chunks: Buffer[] = []
+        request.on('data', (chunk: Buffer) => chunks.push(chunk))
+        request.on('end', async () => {
+          try {
+            const body = chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) as Record<string, unknown> : undefined
+            const apiResponse = {
+              status: (status: number) => { response.statusCode = status; return apiResponse },
+              setHeader: (name: string, value: string) => response.setHeader(name, value),
+              json: (value: object) => { response.setHeader('Content-Type', 'application/json'); response.end(JSON.stringify(value)) },
+            }
+            const headers = { ...request.headers, cookie: request.headers.cookie }
+            if (url.pathname === '/api/admin/login') {
+              const { default: login } = await import('./api/admin/login.js')
+              login({ method: request.method, headers, body }, apiResponse)
+            } else if (url.pathname === '/api/admin/logout') {
+              const { default: logout } = await import('./api/admin/logout.js')
+              logout({ method: request.method }, apiResponse)
+            } else if (url.pathname === '/api/admin/content') {
+              const { default: content } = await import('./api/admin/content.js')
+              await content({ method: request.method, headers, body }, apiResponse)
+            } else next()
+          } catch { response.statusCode = 400; response.end(JSON.stringify({ error: 'Invalid request' })) }
+        })
+      })
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), contactApi(), statsApi(), spinViewApi()],
+  plugins: [react(), contactApi(), statsApi(), spinViewApi(), adminApi()],
 })

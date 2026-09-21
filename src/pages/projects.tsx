@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { projects, translations } from '../data'
+import { translations } from '../data'
 import type { Project, ProjectCategory } from '../data'
 
 function DesignProjectCard({ project, onSelect }: { project: Project; onSelect: (project: Project) => void }) {
@@ -58,7 +58,7 @@ function buildMobileProjectBlocks(items: Project[]) {
     return blocks
 }
 
-export function ProjectsPage({ language }: { language: 'en' | 'id' }) {
+export function ProjectsPage({ language, projects }: { language: 'en' | 'id'; projects: Project[] }) {
     const [projectFilter, setProjectFilter] = useState<'All' | ProjectCategory>('All')
     const [selected, setSelected] = useState<Project | null>(null)
     const t = translations[language]

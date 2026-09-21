@@ -266,6 +266,17 @@ button {
   background-size: 36px 36px;
 }
 
+.site-shell.admin-mode {
+  height: 100vh;
+  padding-top: 0;
+  overflow: hidden;
+}
+
+.site-shell.admin-mode>footer,
+.site-shell.admin-mode>.scroll-top {
+  display: none;
+}
+
 [data-theme='dark'] .site-shell {
   background-image: linear-gradient(rgba(244, 241, 233, .035) 1px, transparent 1px), linear-gradient(90deg, rgba(244, 241, 233, .035) 1px, transparent 1px);
 }
@@ -1687,6 +1698,10 @@ footer a:hover {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 22px;
+}
+
+.projects-page .mobile-project-flow {
+  display: none;
 }
 
 .projects:not(.projects-page) .project-grid {
@@ -3120,6 +3135,13 @@ footer div {
 @media (max-width:800px) {
   .site-shell {
     padding-top: 56px;
+  }
+
+  .site-shell.admin-mode {
+    height: auto;
+    min-height: 100vh;
+    padding-top: 0;
+    overflow: visible;
   }
 
   .navbar {

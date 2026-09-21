@@ -8,9 +8,20 @@ The contact form posts to `/api/contact`. Deploy the project on a platform that 
 RESEND_API_KEY=re_your_rotated_key
 RESEND_FROM_EMAIL=Portfolio <onboarding@resend.dev>
 CONTACT_TO_EMAIL=your-verified-email@example.com
+ADMIN_PASSWORD=replace-with-a-long-admin-password
+ADMIN_SESSION_SECRET=replace-with-a-long-random-secret
+
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
 ```
 
 Use a verified Resend domain for `RESEND_FROM_EMAIL` in production. Never expose `RESEND_API_KEY` in frontend code or commit it to the repository.
+
+## Admin panel
+
+Run the complete `sql/schema.sql` file in Supabase, then configure `ADMIN_PASSWORD` and `ADMIN_SESSION_SECRET` server-side. Open `/admin` to edit the About photo, skills, projects, contact social links, Resend recipient email, and the endpoint discovery cards. The CMS stores its content in the `site_content` table; the contact API uses the saved recipient and falls back to `CONTACT_TO_EMAIL` when no CMS value exists.
+
+For images, create a public Supabase Storage bucket named `portfolio-assets` and upload the files there. The admin page uploads images directly to that bucket and stores the public URL in the `site_content` JSON, so the media lives in Supabase instead of in the repo or as a local path.
 
 ## Supabase configuration
 

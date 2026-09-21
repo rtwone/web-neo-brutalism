@@ -1,15 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties, FormEvent } from 'react'
-import { projects, skills, translations } from './data'
+import { translations } from './data'
 import type { Language, Project } from './data'
+import { defaultContent } from './content'
+import type { SiteContent } from './content'
 import { VisitorStats } from './components/VisitorStats'
 import { NotFoundPage } from './pages/notFound.tsx'
 import { ProjectsPage } from './pages/projects.tsx'
 import { TwibbonPage } from './pages/twibbon.tsx'
 import { SpinViewPage } from './pages/spinView.tsx'
+import { AdminPage } from './pages/admin.tsx'
 import './App.css'
 
-type ContactIconName = 'mail' | 'github' | 'instagram' | 'linkedin'
+type ContactIconName = 'mail' | 'github' | 'instagram' | 'linkedin' | 'whatsapp' | 'x' | 'tiktok' | 'youtube' | 'facebook' | 'telegram' | 'discord' | 'threads' | 'pinterest' | 'reddit' | 'snapchat'
 
 function TypedRole({ text }: { text: string }) {
   const professions = text.split(' | ').map(p => p.trim())
@@ -56,9 +59,26 @@ function ContactIcon({ name }: { name: ContactIconName }) {
     github: <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3.3 0 6.7-1.6 6.7-7A5.4 5.4 0 0 0 19.6 4 5 5 0 0 0 19.5 1S18.3.6 15 2.8a13.4 13.4 0 0 0-6 0C5.7.6 4.5 1 4.5 1a5 5 0 0 0-.1 3A5.4 5.4 0 0 0 3.3 7.5c0 5.4 3.4 7 6.7 7a4.8 4.8 0 0 0-1 3.5v4" />,
     instagram: <><rect x="2" y="2" width="20" height="20" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.5" cy="6.5" r=".5" /></>,
     linkedin: <><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6Z" /><rect x="2" y="9" width="4" height="12" /><circle cx="4" cy="4" r="2" /></>,
+    whatsapp: <><path d="M20 4a9.5 9.5 0 0 0-15 11L4 20l5-1a9.5 9.5 0 1 0 11-15Z" /><path d="M8 8c1 4 4 7 8 8" /></>,
+    x: <><path d="M5 4 19 20" /><path d="M19 4 5 20" /></>,
+    tiktok: <path d="M14 4v10a4 4 0 1 1-3-3.9M14 4c1 3 3 4 5 4" />,
+    youtube: <><rect x="2" y="5" width="20" height="14" rx="4" /><path d="m10 9 5 3-5 3Z" /></>,
+    facebook: <path d="M14 21v-8h3l.5-3H14V8c0-1 .4-2 2-2h1.5V3.2A18 18 0 0 0 15 3c-3 0-5 2-5 5v2H7v3h3v8" />,
+    telegram: <><path d="m21 3-7 18-4-7-7-3Z" /><path d="m10 14 4-4" /></>,
+    discord: <><path d="M7 7a14 14 0 0 1 10 0 15 15 0 0 1 3 10 14 14 0 0 1-5 2l-1-2M7 7a15 15 0 0 0-3 10 14 14 0 0 0 5 2l1-2" /><circle cx="9" cy="12" r="1" /><circle cx="15" cy="12" r="1" /></>,
+    threads: <path d="M18 9c-1-3-4-4-7-4-4 0-6 2-6 5 0 4 4 5 7 5 4 0 6-2 6-5 0-4-3-6-7-6" />,
+    pinterest: <path d="M12 3a8 8 0 0 0-3 15l1-4c-1-1-1-2-1-3 0-3 2-5 5-5 2 0 4 1 4 4 0 3-1 5-3 5-1 0-2-1-2-2l1-3c0-1-1-2-2-2-2 0-3 2-3 4 0 1 0 2 1 3l-1 4a8 8 0 1 0 3-16Z" />,
+    reddit: <><circle cx="12" cy="13" r="8" /><path d="M8 14c1 2 7 2 8 0" /><circle cx="9" cy="11" r="1" /><circle cx="15" cy="11" r="1" /><path d="M16 6c-2-1-4-1-5 0" /></>,
+    snapchat: <path d="M12 4c-3 0-4 2-4 5 0 2-1 3-3 4 1 1 3 1 4 2 1 2 2 3 3 3s2-1 3-3c1-1 3-1 4-2-2-1-3-2-3-4 0-3-1-5-4-5Z" />,
   }
 
   return <svg className="contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>
+}
+
+const skillIconSource = (icon: string) => {
+  if (icon.startsWith('http') || icon.startsWith('/')) return icon
+  const baseUrl = import.meta.env.VITE_SUPABASE_URL
+  return baseUrl ? `${baseUrl}/storage/v1/object/public/portfolio-assets/portfolio/icons/${icon}` : `/icons/${icon}`
 }
 
 function DesignProjectCard({ project, onSelect }: { project: Project; onSelect: (project: Project) => void }) {
@@ -106,7 +126,13 @@ function App() {
       : normalizeActiveSection(window.location.hash.slice(1) || 'home'),
   )
   const [formState, setFormState] = useState<'idle' | 'sending' | 'success' | 'validation-error' | 'send-error'>('idle')
+  const [content, setContent] = useState<SiteContent>(defaultContent)
   const t = translations[language]
+  useEffect(() => {
+    fetch('/api/admin/content').then((response) => response.json()).then((data: { content?: SiteContent }) => {
+      if (data.content) setContent({ ...defaultContent, ...data.content })
+    }).catch(() => undefined)
+  }, [])
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? 'dark' : 'light'
     localStorage.setItem('theme', dark ? 'dark' : 'light')
@@ -246,9 +272,11 @@ function App() {
   const isProjectsPage = currentPath === '/projects'
   const isTwibbonPage = currentPath === '/twibbon'
   const isSpinViewPage = currentPath === '/spin-view'
-  const isUnknownPage = !['/', '/projects', '/twibbon', '/spin-view'].includes(currentPath)
-  const designProjects = projects.filter((project) => project.category === 'Design')
-  const developmentProjects = projects.filter((project) => project.category === 'Development')
+  const adminPaths = ['/admin', '/admin/about', '/admin/education', '/admin/experience', '/admin/socials', '/admin/skills', '/admin/projects', '/admin/endpoints']
+  const isAdminPage = adminPaths.includes(currentPath)
+  const isUnknownPage = !['/', '/projects', '/twibbon', '/spin-view', ...adminPaths].includes(currentPath)
+  const designProjects = content.projects.filter((project) => project.category === 'Design')
+  const developmentProjects = content.projects.filter((project) => project.category === 'Development')
 
   const handleBrandClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault()
@@ -260,8 +288,8 @@ function App() {
   }
 
   return (
-    <div className="site-shell">
-      {!isTwibbonPage && <header className="navbar">
+    <div className={isAdminPage ? 'site-shell admin-mode' : 'site-shell'}>
+      {!isTwibbonPage && !isAdminPage && <header className="navbar">
         <div className="nav-brand">
           <a className="nav-brand-link" href={currentPath} onClick={handleBrandClick}>
             <span className="brand">IH<span>.</span></span>
@@ -313,12 +341,12 @@ function App() {
       </header>}
 
       <main>
-        {isSpinViewPage ? (
+        {isAdminPage ? <AdminPage /> : isSpinViewPage ? (
           <SpinViewPage language={language} />
         ) : isTwibbonPage ? (
           <TwibbonPage />
         ) : isProjectsPage ? (
-          <ProjectsPage language={language} />
+          <ProjectsPage language={language} projects={content.projects} />
         ) : <>
           <section id="home" className="hero section">
             <div className="hero-copy">
@@ -365,7 +393,7 @@ function App() {
             <div className="about-grid">
               <div className="portrait">
                 <div className="portrait-inner">
-                  <img src="/images/profile.jpg" alt="Irfan Hariyanto" />
+                  <img src={content.aboutImage} alt="Irfan Hariyanto" />
                 </div>
                 <div className="portrait-orbit" aria-hidden="true">
                   {Array.from({ length: 12 }, (_, index) => <span className="orbit-dot" key={index} />)}
@@ -405,7 +433,7 @@ function App() {
                   <span>{t.journey.education}</span>
                 </div>
                 <div className="timeline">
-                  {t.journey.educationItems.map((item) => (
+                  {content.education.map((item) => (
                     <article key={`${item.period}-${item.title}`} className="timeline-item reveal-on-scroll">
                       <div className="timeline-marker" aria-hidden="true" />
                       <div className="timeline-content">
@@ -426,7 +454,7 @@ function App() {
                   <span>{t.journey.experience}</span>
                 </div>
                 <div className="timeline">
-                  {t.journey.experienceItems.map((item) => (
+                  {content.experience.map((item) => (
                     <article key={`${item.period}-${item.title}`} className="timeline-item reveal-on-scroll">
                       <div className="timeline-marker" aria-hidden="true" />
                       <div className="timeline-content">
@@ -451,10 +479,13 @@ function App() {
               <p>{t.skills.sub}</p>
             </div>
             <div className="skills-list">
-              {skills.map((skill) => (
+              {content.skills.map((skill) => (
                 <div className={`skill-card ${skill.color}`} key={skill.name}>
                   <span className="skill-mark">
-                    <img src={`/icons/${dark && skill.darkIcon ? skill.darkIcon : skill.icon}`} alt="" />
+                    <img src={(() => {
+                      const icon = dark && skill.darkIcon ? skill.darkIcon : skill.icon
+                      return skillIconSource(icon)
+                    })()} alt="" />
                   </span>
                   <span>{skill.name}</span>
                 </div>
@@ -503,7 +534,7 @@ function App() {
                 ))}
               </div>
             )}
-            {projects.length > 3 && (
+            {content.projects.length > 3 && (
               <a className="text-link project-more" href="/projects">
                 {t.projects.more} <span>↗</span>
               </a>
@@ -518,10 +549,7 @@ function App() {
               <div className="contact-details">
                 <span>{t.contact.details}</span>
                 <div className="contact-social">
-                  <a href="mailto:irfanhariyanto317@gmail.com"><ContactIcon name="mail" />Email</a>
-                  <a href="https://github.com/rtwone" target="_blank"><ContactIcon name="github" />GitHub</a>
-                  <a href="https://instagram.com/irfvnny" target="_blank"><ContactIcon name="instagram" />Instagram</a>
-                  <a href="https://www.linkedin.com/in/irfanhariyanto" target="_blank"><ContactIcon name="linkedin" />LinkedIn</a>
+                  {content.socials.map((social) => <a key={social.label} href={social.url} target={social.url.startsWith('mailto:') ? undefined : '_blank'} rel="noreferrer"><ContactIcon name={social.icon} />{social.label}</a>)}
                 </div>
               </div>
             </div>
@@ -553,20 +581,20 @@ function App() {
             <div className="endpoint-discovery">
               <div className="endpoint-intro">
                 <span className="eyebrow">{t.endpointDiscovery.kicker}</span>
-                <h3>{t.endpointDiscovery.title}</h3>
+                <h3>{content.endpointDiscovery.title[language]}</h3>
               </div>
 
               <div className="endpoint-grid">
-                <a className="endpoint-card" href="/twibbon">
-                  <span className="endpoint-pill">{t.endpointDiscovery.twibbon.label}</span>
-                  <strong>{t.endpointDiscovery.twibbon.title}</strong>
-                  <p>{t.endpointDiscovery.twibbon.description}</p>
+                <a className="endpoint-card" href={content.endpointDiscovery.twibbon.path}>
+                  <span className="endpoint-pill">{content.endpointDiscovery.twibbon.label}</span>
+                  <strong>{content.endpointDiscovery.twibbon.title[language]}</strong>
+                  <p>{content.endpointDiscovery.twibbon.description[language]}</p>
                 </a>
 
-                <a className="endpoint-card" href="/spin-view">
-                  <span className="endpoint-pill">{t.endpointDiscovery.spinView.label}</span>
-                  <strong>{t.endpointDiscovery.spinView.title}</strong>
-                  <p>{t.endpointDiscovery.spinView.description}</p>
+                <a className="endpoint-card" href={content.endpointDiscovery.spinView.path}>
+                  <span className="endpoint-pill">{content.endpointDiscovery.spinView.label}</span>
+                  <strong>{content.endpointDiscovery.spinView.title[language]}</strong>
+                  <p>{content.endpointDiscovery.spinView.description[language]}</p>
                 </a>
               </div>
             </div>

@@ -1,5 +1,6 @@
 import { checkGlobalRateLimit } from '../lib/rate-limit.js'
 import { getRequestSignals } from '../lib/visitor.js'
+import { getStoredContactEmail } from '../lib/content.js'
 
 export type VercelRequest = {
     method?: string
@@ -58,7 +59,12 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
     const apiKey = process.env.RESEND_API_KEY
     const from = process.env.RESEND_FROM_EMAIL
-    const to = process.env.CONTACT_TO_EMAIL
+    let to = process.env.CONTACT_TO_EMAIL
+    try {
+        to = await getStoredContactEmail() || to
+    } catch {
+        // Keep the environment fallback available if CMS storage is unavailable.
+    }
 
     if (!apiKey || !from || !to) {
         return json(response, 500, { error: 'Email service is not configured' })
