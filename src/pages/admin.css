@@ -264,46 +264,91 @@
 }
 
 .admin-loading {
-    width: min(520px, 100%);
+    width: min(540px, calc(100% - 28px));
     margin: 14vh auto 0;
-    padding: 30px;
+    padding: 28px 26px 22px;
     border: 2px solid var(--line);
-    background: var(--surface);
+    background: linear-gradient(135deg, var(--surface) 0%, #fdf7d8 100%);
     box-shadow: var(--shadow);
+    transform: rotate(-.5deg);
 }
 
-.admin-loading-bar {
-    width: 100%;
-    height: 12px;
-    margin-top: 28px;
-    overflow: hidden;
-    border: 2px solid var(--line);
-    background: var(--bg);
-}
-
-.admin-loading-bar::after {
-    content: '';
-    display: block;
-    width: 42%;
-    height: 100%;
-    background: var(--yellow);
-    animation: admin-loading 1.1s ease-in-out infinite;
+.admin-loading h2 {
+    margin: 10px 0 8px;
+    font-size: clamp(30px, 5vw, 52px);
+    letter-spacing: -.07em;
+    line-height: .95;
 }
 
 .admin-loading p {
-    margin: 14px 0 0;
+    margin: 0 0 18px;
     color: var(--muted);
-    font: 11px var(--mono);
+    font: 12px var(--mono);
     text-transform: uppercase;
+    letter-spacing: .08em;
+}
+
+.admin-loading-bar {
+    position: relative;
+    width: 100%;
+    height: 14px;
+    overflow: hidden;
+    border: 2px solid var(--line);
+    background: rgba(20, 20, 20, 0.05);
+}
+
+.admin-loading-bar span {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 38%;
+    background: linear-gradient(90deg, var(--yellow), var(--blue), var(--pink));
+    animation: admin-loading 1.2s ease-in-out infinite;
+}
+
+.admin-loading-dots {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.admin-loading-dots span {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--ink);
+    animation: admin-loading-dot 1s ease-in-out infinite;
+}
+
+.admin-loading-dots span:nth-child(2) {
+    animation-delay: .15s;
+}
+
+.admin-loading-dots span:nth-child(3) {
+    animation-delay: .3s;
 }
 
 @keyframes admin-loading {
-    from {
-        transform: translateX(-110%);
+    0% {
+        transform: translateX(-115%);
     }
 
-    to {
-        transform: translateX(250%);
+    100% {
+        transform: translateX(255%);
+    }
+}
+
+@keyframes admin-loading-dot {
+
+    0%,
+    80%,
+    100% {
+        opacity: .2;
+        transform: translateY(0);
+    }
+
+    40% {
+        opacity: 1;
+        transform: translateY(-2px);
     }
 }
 
@@ -794,12 +839,93 @@
 }
 
 .admin-message {
-    margin-top: 22px;
-    padding: 14px 16px;
-    border: 2px solid var(--line);
+    position: fixed;
+    top: 58px;
+    right: 18px;
+    left: auto;
+    z-index: 60;
+    width: min(360px, calc(100vw - 48px));
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px 10px 16px;
+    border: 3px solid var(--line);
     background: var(--yellow);
     color: #141414;
     box-shadow: 4px 4px 0 var(--ink);
+    font: 400 12px/1.2 "DM Mono", monospace;
+    letter-spacing: -.03em;
+    opacity: 0;
+    transform: translate3d(4px, 4px, 0) rotate(1deg);
+    animation: admin-message-in .35s cubic-bezier(.22, 1, .36, 1) forwards;
+}
+
+.admin-message>span {
+    flex: 1;
+}
+
+.admin-message-close {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border: 3px solid var(--line);
+    background: #f36c4c;
+    color: #141414;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 0 0 0 var(--ink);
+}
+
+@media (max-width: 640px) {
+    .admin-message {
+        top: 14px;
+        right: 12px;
+        left: 12px;
+        width: auto;
+        max-width: calc(100vw - 24px);
+        min-height: 42px;
+        padding: 9px 10px 9px 12px;
+        font-size: 11px;
+    }
+
+    .admin-message-close {
+        width: 24px;
+        height: 24px;
+        font-size: 18px;
+    }
+}
+
+.admin-message.hidden {
+    animation: admin-message-out .28s ease-in forwards;
+}
+
+@keyframes admin-message-in {
+    from {
+        opacity: 0;
+        transform: translate3d(4px, 4px, 0) rotate(1deg);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) rotate(0deg);
+    }
+}
+
+@keyframes admin-message-out {
+    from {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) rotate(0deg);
+    }
+
+    to {
+        opacity: 0;
+        transform: translate3d(18px, -10px, 0) rotate(-1deg);
+    }
 }
 
 .admin-confirmation {

@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { translations } from '../data'
-import type { Project, ProjectCategory } from '../data'
+import { translations } from '../content'
+import type { Project, ProjectCategory } from '../content'
 
 function DesignProjectCard({ project, onSelect }: { project: Project; onSelect: (project: Project) => void }) {
     return (

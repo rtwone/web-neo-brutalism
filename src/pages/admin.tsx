@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { defaultContent } from '../content'
+import { defaultContent, getLocalizedText, sanitizeSiteContent } from '../content'
 import type { JourneyEntry, SiteContent } from '../content'
-import type { Project, Skill } from '../data'
+import type { Project, Skill } from '../content'
 import { getSupabaseBrowser } from '../../lib/db'
 import './admin.css'
 
@@ -15,11 +15,11 @@ const defaultSkill = (): Skill => ({
 })
 
 const defaultJourneyEntry = (): JourneyEntry => ({
-    period: '',
-    title: '',
-    subtitle: '',
+    period: { id: '', en: '' },
+    title: { id: '', en: '' },
+    subtitle: { id: '', en: '' },
     tone: 'yellow',
-    badge: '',
+    badge: { id: '', en: '' },
 })
 
 const defaultProject = (category: 'Development' | 'Design' | 'Other' = 'Development'): Project => {
@@ -153,10 +153,11 @@ export function AdminPage() {
     const pageTitle = adminSection === 'dashboard' ? 'Dashboard' : ({ about: 'About & Contact', education: 'Education', experience: 'Experience', socials: 'Social media', skills: 'Skills', projects: 'Projects', endpoints: 'Endpoints' }[adminSection] || 'Dashboard')
     const [password, setPassword] = useState('')
     const [showPassword, setShowPassword] = useState(false)
-    const [content, setContent] = useState<SiteContent>(() => normalizeContentImages(defaultContent))
+    const [content, setContent] = useState<SiteContent>(() => normalizeContentImages(sanitizeSiteContent(defaultContent)))
     const [authenticated, setAuthenticated] = useState(false)
     const [authChecked, setAuthChecked] = useState(false)
     const [message, setMessage] = useState('')
+    const [isMessageVisible, setIsMessageVisible] = useState(false)
     const [uploading, setUploading] = useState(false)
     const [editorTarget, setEditorTarget] = useState<EditorTarget>(null)
     const [deleteConfirmation, setDeleteConfirmation] = useState<{ label: string; remove: () => void } | null>(null)
@@ -170,8 +171,8 @@ export function AdminPage() {
             if (response.status === 401) return
             return
         }
-        const data = await response.json() as { content?: SiteContent }
-        if (data.content) setContent(normalizeContentImages({ ...defaultContent, ...data.content }))
+        const data = await response.json() as { content?: Partial<SiteContent> | null }
+        if (data.content) setContent(normalizeContentImages(sanitizeSiteContent(data.content)))
     }
 
     useEffect(() => {
@@ -187,6 +188,30 @@ export function AdminPage() {
             void loadContent()
         }
     }, [authChecked, authenticated])
+
+    useEffect(() => {
+        if (!message) {
+            setIsMessageVisible(false)
+            return
+        }
+
+        setIsMessageVisible(true)
+        const dismissTimer = window.setTimeout(() => {
+            setIsMessageVisible(false)
+        }, 2800)
+
+        return () => window.clearTimeout(dismissTimer)
+    }, [message])
+
+    useEffect(() => {
+        if (!message || isMessageVisible) return
+
+        const clearTimer = window.setTimeout(() => {
+            setMessage('')
+        }, 260)
+
+        return () => window.clearTimeout(clearTimer)
+    }, [message, isMessageVisible])
 
     useEffect(() => {
         if (adminSection === 'dashboard') return
@@ -217,7 +242,27 @@ export function AdminPage() {
 
     const updateContent = (nextContent: SiteContent) => setContent(nextContent)
 
-    const isJourneyItemEmpty = (item: JourneyEntry) => !item.title.trim() && !item.period.trim() && !item.subtitle.trim() && !(item.badge ?? '').trim()
+    const addEndpointCard = () => {
+        const index = (content.endpointDiscovery.custom ?? []).length
+        setContent((currentContent) => ({
+            ...currentContent,
+            endpointDiscovery: {
+                ...currentContent.endpointDiscovery,
+                custom: [
+                    ...(currentContent.endpointDiscovery.custom ?? []),
+                    {
+                        label: '',
+                        title: { id: '', en: '' },
+                        description: { id: '', en: '' },
+                        path: '',
+                    },
+                ],
+            },
+        }))
+        setEditorTarget({ section: 'endpoint', index: 2 + index })
+    }
+
+    const isJourneyItemEmpty = (item: JourneyEntry) => !getLocalizedText(item.title, 'id').trim() && !getLocalizedText(item.period, 'id').trim() && !getLocalizedText(item.subtitle, 'id').trim() && !getLocalizedText(item.badge, 'id').trim()
     const isSocialItemEmpty = (item: SiteContent['socials'][number]) => !item.label.trim() && !item.url.trim()
     const isSkillItemEmpty = (item: Skill) => !item.name.trim() && !item.mark.trim()
     const isProjectItemEmpty = (item: Project) => {
@@ -236,6 +281,20 @@ export function AdminPage() {
                 const current = currentContent[section][index]
                 if (current && isJourneyItemEmpty(current)) {
                     nextContent = { ...currentContent, [section]: currentContent[section].filter((_, itemIndex) => itemIndex !== index) }
+                }
+            }
+
+            if (section === 'endpoint' && index >= 2) {
+                const current = currentContent.endpointDiscovery.custom?.[index - 2]
+                const isEmptyEndpoint = !current || (!current.label.trim() && !current.path.trim() && !current.title.id.trim() && !current.title.en.trim() && !current.description.id.trim() && !current.description.en.trim())
+                if (isEmptyEndpoint) {
+                    nextContent = {
+                        ...currentContent,
+                        endpointDiscovery: {
+                            ...currentContent.endpointDiscovery,
+                            custom: (currentContent.endpointDiscovery.custom ?? []).filter((_, itemIndex) => itemIndex !== index - 2),
+                        },
+                    }
                 }
             }
 
@@ -335,13 +394,15 @@ export function AdminPage() {
     const save = async (event: React.FormEvent) => {
         event.preventDefault()
         try {
+            const sanitized = sanitizeSiteContent(content)
             const response = await fetch('/api/admin/content', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(content),
+                body: JSON.stringify(sanitized),
             })
             if (!response.ok) throw new Error()
             setMessage('Perubahan tersimpan di Supabase dan akan tampil di halaman publik.')
+            setContent(sanitized)
         } catch {
             setMessage('Gagal menyimpan. Cek koneksi Supabase dan data yang diisi.')
         }
@@ -351,8 +412,10 @@ export function AdminPage() {
         <main className={`admin-page admin-route-${adminSection}`}>
             <div className="admin-loading" aria-live="polite">
                 <span className="eyebrow">ADMIN / PORTFOLIO CMS</span>
-                <div className="admin-loading-bar" />
-                <p>Memulihkan sesi...</p>
+                <h2>Syncing dashboard...</h2>
+                <p>Checking your access and loading content.</p>
+                <div className="admin-loading-bar" aria-hidden="true"><span /></div>
+                <div className="admin-loading-dots" aria-hidden="true"><span /><span /><span /></div>
             </div>
         </main>
     )
@@ -377,7 +440,12 @@ export function AdminPage() {
                     </div>
                 </label>
                 <button className="button primary" type="submit">Masuk <AdminIcon name="arrow" /></button>
-                {message && <p className="admin-message">{message}</p>}
+                {message && (
+                    <div className={`admin-message ${isMessageVisible ? 'visible' : 'hidden'}`} role="status" aria-live="polite">
+                        <span>{message}</span>
+                        <button type="button" className="admin-message-close" aria-label="Tutup notifikasi" onClick={() => setMessage('')}>×</button>
+                    </div>
+                )}
             </form>
         </main>
     )
@@ -449,20 +517,30 @@ export function AdminPage() {
                                     <div className="admin-list-entry" key={`${section}-${index}`}>
                                         <div className="admin-list-row">
                                             <button type="button" className="admin-list-button" onClick={() => setEditorTarget({ section, index })}>
-                                                <strong>{item.title || `${section === 'education' ? 'Education' : 'Experience'} #${index + 1}`}</strong>
-                                                <span>{item.period} · {item.subtitle || 'Belum ada detail'}</span>
+                                                <strong>{getLocalizedText(item.title, 'id') || `${section === 'education' ? 'Education' : 'Experience'} #${index + 1}`}</strong>
+                                                <span>{getLocalizedText(item.period, 'id')} · {getLocalizedText(item.subtitle, 'id') || 'Belum ada detail'}</span>
                                                 <b>↗</b>
                                             </button>
                                         </div>
                                         <div className={`admin-card admin-modal-card ${isEditorOpen(section, index) ? 'is-open' : ''}`}>
-                                            <div className="admin-card-top"><strong>{item.title || `${section === 'education' ? 'Education' : 'Experience'} #${index + 1}`}</strong><button type="button" className="close-button icon-button" onClick={() => closeEditor(section, index)} aria-label="Tutup editor" title="Tutup editor"><AdminIcon name="close" /></button></div>
+                                            <div className="admin-card-top"><strong>{getLocalizedText(item.title, 'id') || `${section === 'education' ? 'Education' : 'Experience'} #${index + 1}`}</strong><button type="button" className="close-button icon-button" onClick={() => closeEditor(section, index)} aria-label="Tutup editor" title="Tutup editor"><AdminIcon name="close" /></button></div>
                                             <div className="admin-grid two-columns">
-                                                <label>Periode<input value={item.period} onChange={(event) => updateContent({ ...content, [section]: content[section].map((entry, itemIndex) => itemIndex === index ? { ...entry, period: event.target.value } : entry) })} /></label>
-                                                <label>Judul<input value={item.title} onChange={(event) => updateContent({ ...content, [section]: content[section].map((entry, itemIndex) => itemIndex === index ? { ...entry, title: event.target.value } : entry) })} /></label>
+                                                <label>Periode (ID)<input value={item.period.id} onChange={(event) => updateContent({ ...content, [section]: content[section].map((entry, itemIndex) => itemIndex === index ? { ...entry, period: { ...entry.period, id: event.target.value } } : entry) })} /></label>
+                                                <label>Periode (EN)<input value={item.period.en} onChange={(event) => updateContent({ ...content, [section]: content[section].map((entry, itemIndex) => itemIndex === index ? { ...entry, period: { ...entry.period, en: event.target.value } } : entry) })} /></label>
                                             </div>
-                                            <label>Institusi / Detail<input value={item.subtitle} onChange={(event) => updateContent({ ...content, [section]: content[section].map((entry, itemIndex) => itemIndex === index ? { ...entry, subtitle: event.target.value } : entry) })} /></label>
                                             <div className="admin-grid two-columns">
-                                                <label>Badge<input value={item.badge ?? ''} onChange={(event) => updateContent({ ...content, [section]: content[section].map((entry, itemIndex) => itemIndex === index ? { ...entry, badge: event.target.value || undefined } : entry) })} /></label>
+                                                <label>Judul (ID)<input value={item.title.id} onChange={(event) => updateContent({ ...content, [section]: content[section].map((entry, itemIndex) => itemIndex === index ? { ...entry, title: { ...entry.title, id: event.target.value } } : entry) })} /></label>
+                                                <label>Judul (EN)<input value={item.title.en} onChange={(event) => updateContent({ ...content, [section]: content[section].map((entry, itemIndex) => itemIndex === index ? { ...entry, title: { ...entry.title, en: event.target.value } } : entry) })} /></label>
+                                            </div>
+                                            <div className="admin-grid two-columns">
+                                                <label>Detail (ID)<input value={item.subtitle.id} onChange={(event) => updateContent({ ...content, [section]: content[section].map((entry, itemIndex) => itemIndex === index ? { ...entry, subtitle: { ...entry.subtitle, id: event.target.value } } : entry) })} /></label>
+                                                <label>Detail (EN)<input value={item.subtitle.en} onChange={(event) => updateContent({ ...content, [section]: content[section].map((entry, itemIndex) => itemIndex === index ? { ...entry, subtitle: { ...entry.subtitle, en: event.target.value } } : entry) })} /></label>
+                                            </div>
+                                            <div className="admin-grid two-columns">
+                                                <label>Badge (ID)<input value={item.badge?.id ?? ''} onChange={(event) => updateContent({ ...content, [section]: content[section].map((entry, itemIndex) => itemIndex === index ? { ...entry, badge: { ...entry.badge, id: event.target.value } } : entry) })} /></label>
+                                                <label>Badge (EN)<input value={item.badge?.en ?? ''} onChange={(event) => updateContent({ ...content, [section]: content[section].map((entry, itemIndex) => itemIndex === index ? { ...entry, badge: { ...entry.badge, en: event.target.value } } : entry) })} /></label>
+                                            </div>
+                                            <div className="admin-grid two-columns">
                                                 <label>Tone<select value={item.tone} onChange={(event) => updateContent({ ...content, [section]: content[section].map((entry, itemIndex) => itemIndex === index ? { ...entry, tone: event.target.value as JourneyEntry['tone'] } : entry) })}>
                                                     <option value="yellow">Yellow</option><option value="blue">Blue</option><option value="orange">Orange</option><option value="green">Green</option><option value="white">White</option>
                                                 </select></label>
@@ -670,52 +748,105 @@ export function AdminPage() {
                     <section id="admin-endpoints" className="admin-section">
                         <h2>Visit endpoints you may not know yet</h2>
                         <div className="admin-array-list">
-                            <div className="admin-list-entry">
-                                <div className="admin-list-row">
-                                    <button type="button" className="admin-list-button" onClick={() => setEditorTarget({ section: 'endpoint', index: 0 })}><strong>{content.endpointDiscovery.twibbon.label}</strong><span>{content.endpointDiscovery.twibbon.path}</span><b>↗</b></button>
+                            {[{ key: 'twibbon', item: content.endpointDiscovery.twibbon, index: 0 }, { key: 'spinView', item: content.endpointDiscovery.spinView, index: 1 }, ...((content.endpointDiscovery.custom ?? []).map((item, index) => ({ key: `custom-${index}`, item, index: index + 2 })))].map(({ key, item, index }) => (
+                                <div className="admin-list-entry" key={key}>
+                                    <div className="admin-list-row">
+                                        <button type="button" className="admin-list-button" onClick={() => setEditorTarget({ section: 'endpoint', index })}><strong>{item.label}</strong><span>{item.path}</span><b>↗</b></button>
+                                    </div>
+                                    <div className={`admin-card admin-modal-card ${isEditorOpen('endpoint', index) ? 'is-open' : ''}`}>
+                                        <div className="admin-card-top"><strong>{item.label}</strong><button type="button" className="close-button icon-button" onClick={() => setEditorTarget(null)} aria-label="Tutup editor" title="Tutup editor"><AdminIcon name="close" /></button></div>
+                                        <div className="admin-grid two-columns">
+                                            <label>Label<input placeholder="/custom-endpoint" value={item.label} onChange={(event) => {
+                                                if (index === 0) {
+                                                    updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, twibbon: { ...content.endpointDiscovery.twibbon, label: event.target.value } } })
+                                                    return
+                                                }
+                                                if (index === 1) {
+                                                    updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, spinView: { ...content.endpointDiscovery.spinView, label: event.target.value } } })
+                                                    return
+                                                }
+                                                updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, custom: (content.endpointDiscovery.custom ?? []).map((entry, itemIndex) => itemIndex === index - 2 ? { ...entry, label: event.target.value } : entry) } })
+                                            }} /></label>
+                                            <label>Path<input placeholder="/custom-endpoint" value={item.path} onChange={(event) => {
+                                                if (index === 0) {
+                                                    updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, twibbon: { ...content.endpointDiscovery.twibbon, path: event.target.value } } })
+                                                    return
+                                                }
+                                                if (index === 1) {
+                                                    updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, spinView: { ...content.endpointDiscovery.spinView, path: event.target.value } } })
+                                                    return
+                                                }
+                                                updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, custom: (content.endpointDiscovery.custom ?? []).map((entry, itemIndex) => itemIndex === index - 2 ? { ...entry, path: event.target.value } : entry) } })
+                                            }} /></label>
+                                        </div>
+                                        <div className="admin-grid two-columns">
+                                            <label>Title ID<input placeholder="Endpoint baru" value={item.title.id} onChange={(event) => {
+                                                if (index === 0) {
+                                                    updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, twibbon: { ...content.endpointDiscovery.twibbon, title: { ...content.endpointDiscovery.twibbon.title, id: event.target.value } } } })
+                                                    return
+                                                }
+                                                if (index === 1) {
+                                                    updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, spinView: { ...content.endpointDiscovery.spinView, title: { ...content.endpointDiscovery.spinView.title, id: event.target.value } } } })
+                                                    return
+                                                }
+                                                updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, custom: (content.endpointDiscovery.custom ?? []).map((entry, itemIndex) => itemIndex === index - 2 ? { ...entry, title: { ...entry.title, id: event.target.value } } : entry) } })
+                                            }} /></label>
+                                            <label>Title EN<input placeholder="New endpoint" value={item.title.en} onChange={(event) => {
+                                                if (index === 0) {
+                                                    updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, twibbon: { ...content.endpointDiscovery.twibbon, title: { ...content.endpointDiscovery.twibbon.title, en: event.target.value } } } })
+                                                    return
+                                                }
+                                                if (index === 1) {
+                                                    updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, spinView: { ...content.endpointDiscovery.spinView, title: { ...content.endpointDiscovery.spinView.title, en: event.target.value } } } })
+                                                    return
+                                                }
+                                                updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, custom: (content.endpointDiscovery.custom ?? []).map((entry, itemIndex) => itemIndex === index - 2 ? { ...entry, title: { ...entry.title, en: event.target.value } } : entry) } })
+                                            }} /></label>
+                                        </div>
+                                        <div className="admin-grid two-columns">
+                                            <label>Desc ID<textarea placeholder="Tambahkan deskripsi endpoint." value={item.description.id} onChange={(event) => {
+                                                if (index === 0) {
+                                                    updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, twibbon: { ...content.endpointDiscovery.twibbon, description: { ...content.endpointDiscovery.twibbon.description, id: event.target.value } } } })
+                                                    return
+                                                }
+                                                if (index === 1) {
+                                                    updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, spinView: { ...content.endpointDiscovery.spinView, description: { ...content.endpointDiscovery.spinView.description, id: event.target.value } } } })
+                                                    return
+                                                }
+                                                updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, custom: (content.endpointDiscovery.custom ?? []).map((entry, itemIndex) => itemIndex === index - 2 ? { ...entry, description: { ...entry.description, id: event.target.value } } : entry) } })
+                                            }} /></label>
+                                            <label>Desc EN<textarea placeholder="Add an endpoint description." value={item.description.en} onChange={(event) => {
+                                                if (index === 0) {
+                                                    updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, twibbon: { ...content.endpointDiscovery.twibbon, description: { ...content.endpointDiscovery.twibbon.description, en: event.target.value } } } })
+                                                    return
+                                                }
+                                                if (index === 1) {
+                                                    updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, spinView: { ...content.endpointDiscovery.spinView, description: { ...content.endpointDiscovery.spinView.description, en: event.target.value } } } })
+                                                    return
+                                                }
+                                                updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, custom: (content.endpointDiscovery.custom ?? []).map((entry, itemIndex) => itemIndex === index - 2 ? { ...entry, description: { ...entry.description, en: event.target.value } } : entry) } })
+                                            }} /></label>
+                                        </div>
+                                        {index >= 2 && (
+                                            <div className="admin-modal-actions"><span>Aksi item</span><button type="button" className="danger-button icon-button" onClick={() => confirmDelete('endpoint', () => {
+                                                updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, custom: (content.endpointDiscovery.custom ?? []).filter((_, itemIndex) => itemIndex !== index - 2) } })
+                                                setEditorTarget(null)
+                                            })} aria-label="Hapus endpoint" title="Hapus endpoint"><AdminIcon name="trash" /></button></div>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className={`admin-card admin-modal-card ${isEditorOpen('endpoint', 0) ? 'is-open' : ''}`}>
-                                    <div className="admin-card-top"><strong>{content.endpointDiscovery.twibbon.label}</strong><button type="button" className="close-button icon-button" onClick={() => setEditorTarget(null)} aria-label="Tutup editor" title="Tutup editor"><AdminIcon name="close" /></button></div>
-                                    <div className="admin-grid two-columns">
-                                        <label>Label<input value={content.endpointDiscovery.twibbon.label} onChange={(event) => updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, twibbon: { ...content.endpointDiscovery.twibbon, label: event.target.value } } })} /></label>
-                                        <label>Path<input value={content.endpointDiscovery.twibbon.path} onChange={(event) => updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, twibbon: { ...content.endpointDiscovery.twibbon, path: event.target.value } } })} /></label>
-                                    </div>
-                                    <div className="admin-grid two-columns">
-                                        <label>Title ID<input value={content.endpointDiscovery.twibbon.title.id} onChange={(event) => updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, twibbon: { ...content.endpointDiscovery.twibbon, title: { ...content.endpointDiscovery.twibbon.title, id: event.target.value } } } })} /></label>
-                                        <label>Title EN<input value={content.endpointDiscovery.twibbon.title.en} onChange={(event) => updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, twibbon: { ...content.endpointDiscovery.twibbon, title: { ...content.endpointDiscovery.twibbon.title, en: event.target.value } } } })} /></label>
-                                    </div>
-                                    <div className="admin-grid two-columns">
-                                        <label>Desc ID<textarea value={content.endpointDiscovery.twibbon.description.id} onChange={(event) => updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, twibbon: { ...content.endpointDiscovery.twibbon, description: { ...content.endpointDiscovery.twibbon.description, id: event.target.value } } } })} /></label>
-                                        <label>Desc EN<textarea value={content.endpointDiscovery.twibbon.description.en} onChange={(event) => updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, twibbon: { ...content.endpointDiscovery.twibbon, description: { ...content.endpointDiscovery.twibbon.description, en: event.target.value } } } })} /></label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="admin-list-entry">
-                                <div className="admin-list-row">
-                                    <button type="button" className="admin-list-button" onClick={() => setEditorTarget({ section: 'endpoint', index: 1 })}><strong>{content.endpointDiscovery.spinView.label}</strong><span>{content.endpointDiscovery.spinView.path}</span><b>↗</b></button>
-                                </div>
-                                <div className={`admin-card admin-modal-card ${isEditorOpen('endpoint', 1) ? 'is-open' : ''}`}>
-                                    <div className="admin-card-top"><strong>{content.endpointDiscovery.spinView.label}</strong><button type="button" className="close-button icon-button" onClick={() => setEditorTarget(null)} aria-label="Tutup editor" title="Tutup editor"><AdminIcon name="close" /></button></div>
-                                    <div className="admin-grid two-columns">
-                                        <label>Label<input value={content.endpointDiscovery.spinView.label} onChange={(event) => updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, spinView: { ...content.endpointDiscovery.spinView, label: event.target.value } } })} /></label>
-                                        <label>Path<input value={content.endpointDiscovery.spinView.path} onChange={(event) => updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, spinView: { ...content.endpointDiscovery.spinView, path: event.target.value } } })} /></label>
-                                    </div>
-                                    <div className="admin-grid two-columns">
-                                        <label>Title ID<input value={content.endpointDiscovery.spinView.title.id} onChange={(event) => updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, spinView: { ...content.endpointDiscovery.spinView, title: { ...content.endpointDiscovery.spinView.title, id: event.target.value } } } })} /></label>
-                                        <label>Title EN<input value={content.endpointDiscovery.spinView.title.en} onChange={(event) => updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, spinView: { ...content.endpointDiscovery.spinView, title: { ...content.endpointDiscovery.spinView.title, en: event.target.value } } } })} /></label>
-                                    </div>
-                                    <div className="admin-grid two-columns">
-                                        <label>Desc ID<textarea value={content.endpointDiscovery.spinView.description.id} onChange={(event) => updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, spinView: { ...content.endpointDiscovery.spinView, description: { ...content.endpointDiscovery.spinView.description, id: event.target.value } } } })} /></label>
-                                        <label>Desc EN<textarea value={content.endpointDiscovery.spinView.description.en} onChange={(event) => updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, spinView: { ...content.endpointDiscovery.spinView, description: { ...content.endpointDiscovery.spinView.description, en: event.target.value } } } })} /></label>
-                                    </div>
-                                </div>
-                            </div>
+                            ))}
                         </div>
+                        <button type="button" className="button secondary admin-add-button" onClick={addEndpointCard}><AdminIcon name="plus" /> Tambah endpoint</button>
                     </section>
 
                     <button className="button primary admin-save-button" type="submit" disabled={uploading}><AdminIcon name="save" /> Simpan perubahan</button>
-                    {message && <p className="admin-message">{message}</p>}
+                    {message && (
+                        <div className={`admin-message ${isMessageVisible ? 'visible' : 'hidden'}`} role="status" aria-live="polite">
+                            <span>{message}</span>
+                            <button type="button" className="admin-message-close" aria-label="Tutup notifikasi" onClick={() => setMessage('')}>×</button>
+                        </div>
+                    )}
                 </form>
             </div>
             {deleteConfirmation && <div className="admin-confirmation" role="dialog" aria-modal="true" aria-labelledby="delete-confirmation-title">

@@ -1,9 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CSSProperties, FormEvent } from 'react'
-import { translations } from './data'
-import type { Language, Project } from './data'
-import { defaultContent } from './content'
-import type { SiteContent } from './content'
+import { getLocalizedText, sanitizeSiteContent, translations } from './content'
+import type { Language, Project, SiteContent } from './content'
 import { VisitorStats } from './components/VisitorStats'
 import { NotFoundPage } from './pages/notFound.tsx'
 import { ProjectsPage } from './pages/projects.tsx'
@@ -126,13 +124,29 @@ function App() {
       : normalizeActiveSection(window.location.hash.slice(1) || 'home'),
   )
   const [formState, setFormState] = useState<'idle' | 'sending' | 'success' | 'validation-error' | 'send-error'>('idle')
-  const [content, setContent] = useState<SiteContent>(defaultContent)
+  const [content, setContent] = useState<SiteContent | null>(null)
+  const currentPath = window.location.pathname.replace(/\/$/, '') || '/'
+  const isProjectsPage = currentPath === '/projects'
+  const isTwibbonPage = currentPath === '/twibbon'
+  const isSpinViewPage = currentPath === '/spin-view'
+  const adminPaths = ['/admin', '/admin/about', '/admin/education', '/admin/experience', '/admin/socials', '/admin/skills', '/admin/projects', '/admin/endpoints']
+  const isAdminPage = adminPaths.includes(currentPath)
   const t = translations[language]
-  useEffect(() => {
-    fetch('/api/admin/content').then((response) => response.json()).then((data: { content?: SiteContent }) => {
-      if (data.content) setContent({ ...defaultContent, ...data.content })
-    }).catch(() => undefined)
+
+  const loadContent = useCallback(async () => {
+    try {
+      const response = await fetch('/api/admin/content')
+      if (!response.ok) return
+      const data = await response.json() as { content?: Partial<SiteContent> | null }
+      setContent(sanitizeSiteContent(data.content ?? {}))
+    } catch {
+      setContent(sanitizeSiteContent({}))
+    }
   }, [])
+
+  useEffect(() => {
+    void loadContent()
+  }, [currentPath, loadContent])
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? 'dark' : 'light'
     localStorage.setItem('theme', dark ? 'dark' : 'light')
@@ -217,23 +231,43 @@ function App() {
       '.section:not(.hero) > *, .marquee, footer, .journey-panel, .journey-panel-header, .timeline-item, .journey-card',
     ))
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          entry.target.classList.toggle('is-visible', entry.isIntersecting)
-        })
-      },
-      { rootMargin: '0px', threshold: .08 },
-    )
+    const updateVisibleState = () => {
+      const viewportHeight = window.innerHeight
+
+      revealElements.forEach((element) => {
+        const rect = element.getBoundingClientRect()
+        const inView = rect.top <= viewportHeight * .95 && rect.bottom >= -80
+        element.classList.toggle('is-visible', inView)
+      })
+    }
+
+    const observer = 'IntersectionObserver' in window
+      ? new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            entry.target.classList.toggle('is-visible', entry.isIntersecting)
+          })
+        },
+        { rootMargin: '0px', threshold: .08 },
+      )
+      : null
 
     revealElements.forEach((element, index) => {
       element.classList.add('reveal-on-scroll')
       element.style.setProperty('--reveal-delay', `${Math.min(index % 4, 3) * 70}ms`)
-      observer.observe(element)
+      observer?.observe(element)
     })
 
+    updateVisibleState()
+    window.addEventListener('load', updateVisibleState)
+    window.addEventListener('resize', updateVisibleState)
+    window.addEventListener('scroll', updateVisibleState, { passive: true })
+
     return () => {
-      observer.disconnect()
+      observer?.disconnect()
+      window.removeEventListener('load', updateVisibleState)
+      window.removeEventListener('resize', updateVisibleState)
+      window.removeEventListener('scroll', updateVisibleState)
       revealElements.forEach((element) => {
         element.classList.remove('reveal-on-scroll', 'is-visible')
         element.style.removeProperty('--reveal-delay')
@@ -268,15 +302,7 @@ function App() {
     }
   }
 
-  const currentPath = window.location.pathname.replace(/\/$/, '') || '/'
-  const isProjectsPage = currentPath === '/projects'
-  const isTwibbonPage = currentPath === '/twibbon'
-  const isSpinViewPage = currentPath === '/spin-view'
-  const adminPaths = ['/admin', '/admin/about', '/admin/education', '/admin/experience', '/admin/socials', '/admin/skills', '/admin/projects', '/admin/endpoints']
-  const isAdminPage = adminPaths.includes(currentPath)
   const isUnknownPage = !['/', '/projects', '/twibbon', '/spin-view', ...adminPaths].includes(currentPath)
-  const designProjects = content.projects.filter((project) => project.category === 'Design')
-  const developmentProjects = content.projects.filter((project) => project.category === 'Development')
 
   const handleBrandClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault()
@@ -286,6 +312,26 @@ function App() {
   if (isUnknownPage) {
     return <NotFoundPage language={language} />
   }
+
+  if (!content) {
+    return (
+      <div className={isAdminPage ? 'site-shell admin-mode' : 'site-shell'}>
+        <main>
+          <section className="section about">
+            <div className="site-loading">
+              <span className="eyebrow">SYSTEM / STATUS</span>
+              <h2>Loading experience...</h2>
+              <div className="site-loading-bar" aria-hidden="true"><span /></div>
+              <p>Fetching portfolio content</p>
+            </div>
+          </section>
+        </main>
+      </div>
+    )
+  }
+
+  const designProjects = content.projects.filter((project) => project.category === 'Design')
+  const developmentProjects = content.projects.filter((project) => project.category === 'Development')
 
   return (
     <div className={isAdminPage ? 'site-shell admin-mode' : 'site-shell'}>
@@ -433,19 +479,26 @@ function App() {
                   <span>{t.journey.education}</span>
                 </div>
                 <div className="timeline">
-                  {content.education.map((item) => (
-                    <article key={`${item.period}-${item.title}`} className="timeline-item reveal-on-scroll">
-                      <div className="timeline-marker" aria-hidden="true" />
-                      <div className="timeline-content">
-                        <span className="journey-date">{item.period}</span>
-                        <div className={`journey-card journey-card--${item.tone}`}>
-                          <h3>{item.title}</h3>
-                          {item.subtitle && <p>{item.subtitle}</p>}
-                          {item.badge && <span className="journey-badge">{item.badge}</span>}
+                  {content.education.map((item) => {
+                    const period = getLocalizedText(item.period, language)
+                    const title = getLocalizedText(item.title, language)
+                    const subtitle = getLocalizedText(item.subtitle, language)
+                    const badge = getLocalizedText(item.badge, language)
+
+                    return (
+                      <article key={`${period}-${title}`} className="timeline-item reveal-on-scroll">
+                        <div className="timeline-marker" aria-hidden="true" />
+                        <div className="timeline-content">
+                          <span className="journey-date">{period}</span>
+                          <div className={`journey-card journey-card--${item.tone}`}>
+                            <h3>{title}</h3>
+                            {subtitle && <p>{subtitle}</p>}
+                            {badge && <span className="journey-badge">{badge}</span>}
+                          </div>
                         </div>
-                      </div>
-                    </article>
-                  ))}
+                      </article>
+                    )
+                  })}
                 </div>
               </div>
 
@@ -454,19 +507,26 @@ function App() {
                   <span>{t.journey.experience}</span>
                 </div>
                 <div className="timeline">
-                  {content.experience.map((item) => (
-                    <article key={`${item.period}-${item.title}`} className="timeline-item reveal-on-scroll">
-                      <div className="timeline-marker" aria-hidden="true" />
-                      <div className="timeline-content">
-                        <span className="journey-date">{item.period}</span>
-                        <div className={`journey-card journey-card--${item.tone}`}>
-                          <h3>{item.title}</h3>
-                          {item.subtitle && <p>{item.subtitle}</p>}
-                          {item.badge && <span className="journey-badge">{item.badge}</span>}
+                  {content.experience.map((item) => {
+                    const period = getLocalizedText(item.period, language)
+                    const title = getLocalizedText(item.title, language)
+                    const subtitle = getLocalizedText(item.subtitle, language)
+                    const badge = getLocalizedText(item.badge, language)
+
+                    return (
+                      <article key={`${period}-${title}`} className="timeline-item reveal-on-scroll">
+                        <div className="timeline-marker" aria-hidden="true" />
+                        <div className="timeline-content">
+                          <span className="journey-date">{period}</span>
+                          <div className={`journey-card journey-card--${item.tone}`}>
+                            <h3>{title}</h3>
+                            {subtitle && <p>{subtitle}</p>}
+                            {badge && <span className="journey-badge">{badge}</span>}
+                          </div>
                         </div>
-                      </div>
-                    </article>
-                  ))}
+                      </article>
+                    )
+                  })}
                 </div>
               </div>
             </div>
@@ -585,17 +645,13 @@ function App() {
               </div>
 
               <div className="endpoint-grid">
-                <a className="endpoint-card" href={content.endpointDiscovery.twibbon.path}>
-                  <span className="endpoint-pill">{content.endpointDiscovery.twibbon.label}</span>
-                  <strong>{content.endpointDiscovery.twibbon.title[language]}</strong>
-                  <p>{content.endpointDiscovery.twibbon.description[language]}</p>
-                </a>
-
-                <a className="endpoint-card" href={content.endpointDiscovery.spinView.path}>
-                  <span className="endpoint-pill">{content.endpointDiscovery.spinView.label}</span>
-                  <strong>{content.endpointDiscovery.spinView.title[language]}</strong>
-                  <p>{content.endpointDiscovery.spinView.description[language]}</p>
-                </a>
+                {[content.endpointDiscovery.twibbon, content.endpointDiscovery.spinView, ...(content.endpointDiscovery.custom ?? [])].map((item) => (
+                  <a key={`${item.label}-${item.path}`} className="endpoint-card" href={item.path}>
+                    <span className="endpoint-pill">{item.label}</span>
+                    <strong>{item.title[language]}</strong>
+                    <p>{item.description[language]}</p>
+                  </a>
+                ))}
               </div>
             </div>
           </section>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { twibbonConfig } from '../data'
+import { twibbonConfig } from '../content'
 
 export function TwibbonPage() {
     const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -12,6 +12,7 @@ export function TwibbonPage() {
     const [position, setPosition] = useState({ x: 0, y: 0 })
     const [captionFields, setCaptionFields] = useState<Record<string, string>>({})
     const [feedback, setFeedback] = useState('')
+    const [isFeedbackVisible, setIsFeedbackVisible] = useState(false)
     const [actionError, setActionError] = useState<'download' | 'copy' | null>(null)
     const [captionPopupOpen, setCaptionPopupOpen] = useState(false)
     const renderCanvasRef = useRef<() => void>(() => { })
@@ -74,6 +75,30 @@ export function TwibbonPage() {
     useEffect(() => {
         renderCanvas()
     }, [photoUrl, renderCanvas])
+
+    useEffect(() => {
+        if (!feedback) {
+            setIsFeedbackVisible(false)
+            return
+        }
+
+        setIsFeedbackVisible(true)
+        const dismissTimer = window.setTimeout(() => {
+            setIsFeedbackVisible(false)
+        }, 2800)
+
+        return () => window.clearTimeout(dismissTimer)
+    }, [feedback])
+
+    useEffect(() => {
+        if (!feedback || isFeedbackVisible) return
+
+        const clearTimer = window.setTimeout(() => {
+            setFeedback('')
+        }, 260)
+
+        return () => window.clearTimeout(clearTimer)
+    }, [feedback, isFeedbackVisible])
 
     useEffect(() => () => {
         if (photoUrl) URL.revokeObjectURL(photoUrl)
@@ -237,9 +262,9 @@ export function TwibbonPage() {
                 <a className="twibbon-back-link" href="/">Kunjungi Developer <span aria-hidden="true">↗</span></a>
             </header>
             {feedback && (
-                <div className="twibbon-alert" role="status" aria-live="polite">
+                <div className={`twibbon-alert ${isFeedbackVisible ? 'visible' : 'hidden'}`} role="status" aria-live="polite">
                     <span>{feedback}</span>
-                    <button type="button" aria-label="Tutup notifikasi" onClick={() => setFeedback('')}>×</button>
+                    <button type="button" aria-label="Tutup notifikasi" onClick={() => setIsFeedbackVisible(false)}>×</button>
                 </div>
             )}
             <section className="twibbon-hero">

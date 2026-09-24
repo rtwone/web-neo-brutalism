@@ -16,5 +16,11 @@ export const getSupabaseBrowser = () => {
     const url = browserEnv?.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL
     const anonKey = browserEnv?.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY
     if (!url || !anonKey) throw new Error('Supabase browser environment variables are not configured')
-    return createClient(url, anonKey, { auth: { persistSession: false, autoRefreshToken: false } })
+
+    const globalStore = globalThis as typeof globalThis & { __supabaseBrowserClient?: SupabaseClient }
+    if (!globalStore.__supabaseBrowserClient) {
+        globalStore.__supabaseBrowserClient = createClient(url, anonKey, { auth: { persistSession: false, autoRefreshToken: false } })
+    }
+
+    return globalStore.__supabaseBrowserClient
 }
