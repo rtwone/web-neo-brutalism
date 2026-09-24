@@ -176,49 +176,41 @@ function App() {
   useEffect(() => {
     if (window.location.pathname.replace(/\/$/, '') === '/projects') return
 
-    const sections = ['home', 'about', 'journey', 'projects', 'contact']
-      .map((sectionId) => document.getElementById(sectionId))
-      .filter((section): section is HTMLElement => section !== null)
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (pendingNavigation.current) {
-          const targetEntry = entries.find(
-            (entry) => entry.isIntersecting && entry.target.id === pendingNavigation.current,
-          )
+    const sectionIds = ['home', 'about', 'journey', 'skills', 'projects', 'contact']
 
-          if (!targetEntry) return
-          pendingNavigation.current = null
-          setActiveSection(targetEntry.target.id)
-          return
+    const updateActiveSectionFromScroll = () => {
+      const viewportMidpoint = window.innerHeight * 0.4
+      let nextActive = 'home'
+
+      for (const sectionId of sectionIds) {
+        const section = document.getElementById(sectionId)
+        if (!section) continue
+
+        const rect = section.getBoundingClientRect()
+        const sectionTop = rect.top
+        const sectionBottom = rect.bottom
+
+        if (sectionTop <= viewportMidpoint && sectionBottom >= viewportMidpoint) {
+          nextActive = sectionId
+          break
         }
 
-        const visibleSection = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((first, second) => second.intersectionRatio - first.intersectionRatio)[0]
-
-        const homeSection = document.getElementById('home')
-        const homeInView = homeSection && homeSection.getBoundingClientRect().top <= window.innerHeight * .35 && homeSection.getBoundingClientRect().bottom >= window.innerHeight * .25
-
-        const aboutSection = document.getElementById('about')
-        const aboutInView = aboutSection && aboutSection.getBoundingClientRect().top <= window.innerHeight * .7 && aboutSection.getBoundingClientRect().bottom >= 0
-
-        if (homeInView) {
-          setActiveSection('home')
-          return
+        if (sectionTop <= viewportMidpoint && sectionBottom > 0) {
+          nextActive = sectionId
         }
+      }
 
-        if (aboutInView) {
-          setActiveSection('about')
-          return
-        }
+      setActiveSection(normalizeActiveSection(nextActive))
+    }
 
-        if (visibleSection) setActiveSection(normalizeActiveSection(visibleSection.target.id))
-      },
-      { rootMargin: '-20% 0px -55% 0px', threshold: [0, .25, .5, .75] },
-    )
+    updateActiveSectionFromScroll()
+    window.addEventListener('scroll', updateActiveSectionFromScroll, { passive: true })
+    window.addEventListener('resize', updateActiveSectionFromScroll)
 
-    sections.forEach((section) => observer.observe(section))
-    return () => observer.disconnect()
+    return () => {
+      window.removeEventListener('scroll', updateActiveSectionFromScroll)
+      window.removeEventListener('resize', updateActiveSectionFromScroll)
+    }
   }, [])
 
   useEffect(() => {
