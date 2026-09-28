@@ -259,7 +259,7 @@ export function TwibbonPage() {
                     <span>HIMATIKA UNIJA | LKMM-TD<span className="twibbon-brand-mark">'26</span></span>
                     <small>TWIBBON MAKER</small>
                 </a>
-                <a className="twibbon-back-link" href="/">Kunjungi Developer <span aria-hidden="true">↗</span></a>
+                <a className="twibbon-back-link" href="https://irfanhariyanto.my.id/">Kunjungi Developer <span aria-hidden="true">↗</span></a>
             </header>
             {feedback && (
                 <div className={`twibbon-alert ${isFeedbackVisible ? 'visible' : 'hidden'}`} role="status" aria-live="polite">
