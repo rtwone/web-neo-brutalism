@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { twibbonConfig } from '../content'
+import { twibbonConfig as defaultTwibbonConfig } from '../content'
+import type { TwibbonConfig } from '../content'
 
-export function TwibbonPage() {
+export function TwibbonPage({ config = defaultTwibbonConfig }: { config?: TwibbonConfig }) {
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const templateRef = useRef<HTMLImageElement | null>(null)
     const photoRef = useRef<HTMLImageElement | null>(null)
@@ -18,16 +19,16 @@ export function TwibbonPage() {
     const renderCanvasRef = useRef<() => void>(() => { })
 
     const placeholderNames = Array.from(new Set(
-        Array.from(twibbonConfig.captionTemplate.matchAll(/\{([^{}]+)\}/g), ([, name]) => name.trim()).filter(Boolean),
+        Array.from(config.captionTemplate.matchAll(/\{([^{}]+)\}/g), ([, name]) => name.trim()).filter(Boolean),
     ))
 
-    const resolvedCaption = twibbonConfig.captionTemplate.replace(/\{([^{}]+)\}/g, (_match, name: string) => {
+    const resolvedCaption = config.captionTemplate.replace(/\{([^{}]+)\}/g, (_match, name: string) => {
         const key = name.trim()
         return captionFields[key] || `{${name}}`
     })
 
     const hasEmptyCaptionField = placeholderNames.some((name) => !captionFields[name]?.trim())
-    const captionParts = twibbonConfig.captionTemplate.split(/(\{[^{}]+\})/g)
+    const captionParts = config.captionTemplate.split(/(\{[^{}]+\})/g)
     const formattedCaption = captionParts.map((part, index) => {
         const placeholder = part.match(/^\{([^{}]+)\}$/)
         if (!placeholder) return <span key={`${part}-${index}`}>{part}</span>
@@ -69,8 +70,8 @@ export function TwibbonPage() {
             templateRef.current = template
             renderCanvasRef.current()
         }
-        template.src = twibbonConfig.templatePath
-    }, [])
+        template.src = config.templatePath
+    }, [config.templatePath])
 
     useEffect(() => {
         renderCanvas()
@@ -208,7 +209,7 @@ export function TwibbonPage() {
         const url = URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.download = twibbonConfig.outputFileName
+        link.download = config.outputFileName
         document.body.appendChild(link)
         link.click()
         link.remove()
@@ -269,9 +270,9 @@ export function TwibbonPage() {
             )}
             <section className="twibbon-hero">
                 <div>
-                    <span className="eyebrow">{twibbonConfig.eyebrow}</span>
-                    <h1>{twibbonConfig.title} <i>✦</i></h1>
-                    <p>{twibbonConfig.subtitle}</p>
+                    <span className="eyebrow">{config.eyebrow}</span>
+                    <h1>{config.title} <i>✦</i></h1>
+                    <p>{config.subtitle}</p>
                 </div>
                 <div className="twibbon-hero-sticker" aria-hidden="true">MAKE<br />IT<br /><b>YOURS</b></div>
             </section>

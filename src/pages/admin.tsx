@@ -150,7 +150,7 @@ function SocialIcon({ name }: { name: SocialIconName }) {
 export function AdminPage() {
     type EditorTarget = { section: 'social' | 'skill' | 'project' | 'education' | 'experience' | 'endpoint'; index: number } | null
     const adminSection = window.location.pathname.split('/')[2] || 'dashboard'
-    const pageTitle = adminSection === 'dashboard' ? 'Dashboard' : ({ about: 'About & Contact', education: 'Education', experience: 'Experience', socials: 'Social media', skills: 'Skills', projects: 'Projects', endpoints: 'Endpoints' }[adminSection] || 'Dashboard')
+    const pageTitle = adminSection === 'dashboard' ? 'Dashboard' : ({ about: 'About & Contact', education: 'Education', experience: 'Experience', socials: 'Social media', skills: 'Skills', projects: 'Projects', endpoints: 'Endpoints', twibbon: 'Twibbon template' }[adminSection] || 'Dashboard')
     const [password, setPassword] = useState('')
     const [showPassword, setShowPassword] = useState(false)
     const [content, setContent] = useState<SiteContent>(() => normalizeContentImages(sanitizeSiteContent(defaultContent)))
@@ -371,6 +371,29 @@ export function AdminPage() {
         } finally {
             setUploading(false)
         }
+
+    }
+
+    const uploadTwibbonTemplate = async (file: File) => {
+        if (file.type !== 'image/png') {
+            setMessage('Template harus berupa file PNG.')
+            return
+        }
+        if (file.size > 15 * 1024 * 1024) {
+            setMessage('Template terlalu besar. Maksimal 15 MB.')
+            return
+        }
+        setUploading(true)
+        setMessage('Mengunggah template PNG ke Supabase Storage...')
+        try {
+            const url = await uploadToSupabase(file, 'twibbon', false)
+            updateContent({ ...content, twibbon: { ...content.twibbon, templatePath: url } })
+            setMessage('Template berhasil diunggah. Simpan untuk menerapkan perubahan.')
+        } catch {
+            setMessage('Upload template gagal. Pastikan bucket portfolio-assets sudah dibuat public.')
+        } finally {
+            setUploading(false)
+        }
     }
 
     const uploadSvg = async (file: File, setter: (value: string) => void) => {
@@ -467,6 +490,7 @@ export function AdminPage() {
                     <a className={`admin-sidebar-link ${adminSection === 'skills' ? 'is-active' : ''}`} href="/admin/skills"><span className="admin-sidebar-icon">06</span><strong>Skills</strong></a>
                     <a className={`admin-sidebar-link ${adminSection === 'projects' ? 'is-active' : ''}`} href="/admin/projects"><span className="admin-sidebar-icon">07</span><strong>Projects</strong></a>
                     <a className={`admin-sidebar-link ${adminSection === 'endpoints' ? 'is-active' : ''}`} href="/admin/endpoints"><span className="admin-sidebar-icon">08</span><strong>Endpoints</strong></a>
+                    <a className={`admin-sidebar-link ${adminSection === 'twibbon' ? 'is-active' : ''}`} href="/admin/twibbon"><span className="admin-sidebar-icon">09</span><strong>Twibbon</strong></a>
                     <span className="admin-sidebar-label">Sistem</span>
                     <a className="admin-sidebar-link" href="/"><span className="admin-sidebar-icon">↗</span><strong>Lihat portfolio</strong></a>
                     <button type="button" className="admin-sidebar-link admin-logout-link" onClick={() => void logout()}><span className="admin-sidebar-icon"><AdminIcon name="logout" /></span><strong>Logout</strong></button>
@@ -838,6 +862,26 @@ export function AdminPage() {
                             ))}
                         </div>
                         <button type="button" className="button secondary admin-add-button" onClick={addEndpointCard}><AdminIcon name="plus" /> Tambah endpoint</button>
+                    </section>
+
+                    <section id="admin-twibbon" className="admin-section">
+                        <h2>Manage twibbon template</h2>
+                        <div className="admin-card">
+                            <div className="admin-grid two-columns">
+                                <label>Title<input value={content.twibbon.title} onChange={(event) => updateContent({ ...content, twibbon: { ...content.twibbon, title: event.target.value } })} /></label>
+                                <label>Eyebrow<input value={content.twibbon.eyebrow} onChange={(event) => updateContent({ ...content, twibbon: { ...content.twibbon, eyebrow: event.target.value } })} /></label>
+                            </div>
+                            <label>Subtitle<textarea value={content.twibbon.subtitle} onChange={(event) => updateContent({ ...content, twibbon: { ...content.twibbon, subtitle: event.target.value } })} /></label>
+                            <label>Caption template<textarea value={content.twibbon.captionTemplate} onChange={(event) => updateContent({ ...content, twibbon: { ...content.twibbon, captionTemplate: event.target.value } })} /></label>
+                            <label>Output filename<input value={content.twibbon.outputFileName} onChange={(event) => updateContent({ ...content, twibbon: { ...content.twibbon, outputFileName: event.target.value } })} /></label>
+                            <label>Ganti template PNG<input type="file" accept="image/png" onChange={(event) => {
+                                const file = event.target.files?.[0]
+                                if (file) void uploadTwibbonTemplate(file)
+                                event.target.value = ''
+                            }} disabled={uploading} /></label>
+                            <label>Template URL<input className="admin-url-value" readOnly value={content.twibbon.templatePath} /></label>
+                            <img className="admin-preview twibbon-admin-preview" src={content.twibbon.templatePath} alt="Twibbon template preview" />
+                        </div>
                     </section>
 
                     <button className="button primary admin-save-button" type="submit" disabled={uploading}><AdminIcon name="save" /> Simpan perubahan</button>

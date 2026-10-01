@@ -58,7 +58,8 @@
 .admin-route-socials .admin-editor>#admin-socials,
 .admin-route-skills .admin-editor>#admin-skills,
 .admin-route-projects .admin-editor>#admin-projects,
-.admin-route-endpoints .admin-editor>#admin-endpoints {
+.admin-route-endpoints .admin-editor>#admin-endpoints,
+.admin-route-twibbon .admin-editor>#admin-twibbon {
     display: block;
 }
 

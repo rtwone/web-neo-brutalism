@@ -457,6 +457,15 @@ export type EndpointCard = {
     path: string
 }
 
+export type TwibbonConfig = {
+    title: string
+    subtitle: string
+    eyebrow: string
+    templatePath: string
+    captionTemplate: string
+    outputFileName: string
+}
+
 export type SiteContent = {
     aboutImage: string
     skills: Skill[]
@@ -465,6 +474,7 @@ export type SiteContent = {
     experience: JourneyEntry[]
     socials: SocialLink[]
     contactEmail: string
+    twibbon: TwibbonConfig
     endpointDiscovery: {
         kicker: LocalizedText
         title: LocalizedText
@@ -481,6 +491,14 @@ export const defaultContent: SiteContent = {
     education: [...translations.id.journey.educationItems],
     experience: [...translations.id.journey.experienceItems],
     contactEmail: 'irfanhariyanto317@gmail.com',
+    twibbon: {
+        title: 'Buat Twibbon Kamu',
+        subtitle: 'Upload foto kamu, sesuaikan posisinya, dan buat twibbon kamu sendiri dalam beberapa langkah.',
+        eyebrow: 'CREATIVE TOOL',
+        templatePath: '/images/twibbon.png',
+        captionTemplate: "I'm Ready For LKMM-TD Teknik Informatika Universitas Wiraraja 2026 🚀\n\nHalo, saya {nama} dari Program Studi Teknik Informatika, siap menjadi bagian dari Latihan Keterampilan Manajemen Mahasiswa Tingkat Dasar (LKMM-TD) HIMATIKA 2026.\n\nDengan semangat “Membangun Generasi Informatika yang Adaptif, Kolaboratif, dan Berintegritas”, saya siap membuka diri terhadap hal-hal baru, memperkuat kerja sama, serta menumbuhkan sikap tanggung jawab dalam setiap proses pembelajaran.\n\nMari bersama-sama membangun generasi Informatika yang tidak hanya unggul dalam pengetahuan, tetapi juga mampu beradaptasi, bekerja sama, dan memberikan kontribusi nyata.\n\nBerproses bersama, bertumbuh bersama, dan berdampak untuk sesama!\n\n#UniversitasWiraraja #HimatikaUnija #SalamSatuTeknik #BravoTeknik #LKMMTD26",
+        outputFileName: 'twibbon-lkmmtd26',
+    },
     socials: [
         { icon: 'mail', label: 'Email', url: 'mailto:irfanhariyanto317@gmail.com' },
         { icon: 'github', label: 'GitHub', url: 'https://github.com/rtwone' },
@@ -570,6 +588,10 @@ export function mergeContentWithDefaults(value?: Partial<SiteContent> | null): S
         education: normalizeJourneyCollection(source.education),
         experience: normalizeJourneyCollection(source.experience),
         socials: Array.isArray(source.socials) ? source.socials : defaultContent.socials,
+        twibbon: {
+            ...defaultContent.twibbon,
+            ...(source.twibbon ?? {}),
+        },
         endpointDiscovery,
     }
 }
@@ -645,11 +667,4 @@ export function sanitizeSiteContent(value?: Partial<SiteContent> | null): SiteCo
     }
 }
 
-export const twibbonConfig = {
-    title: 'Buat Twibbon Kamu',
-    subtitle: 'Upload foto kamu, sesuaikan posisinya, dan buat twibbon kamu sendiri dalam beberapa langkah.',
-    eyebrow: 'CREATIVE TOOL',
-    templatePath: '/images/twibbon.png',
-    captionTemplate: "I'm Ready For LKMM-TD Teknik Informatika Universitas Wiraraja 2026 🚀\n\nHalo, saya {nama} dari Program Studi Teknik Informatika, siap menjadi bagian dari Latihan Keterampilan Manajemen Mahasiswa Tingkat Dasar (LKMM-TD) HIMATIKA 2026.\n\nDengan semangat “Membangun Generasi Informatika yang Adaptif, Kolaboratif, dan Berintegritas”, saya siap membuka diri terhadap hal-hal baru, memperkuat kerja sama, serta menumbuhkan sikap tanggung jawab dalam setiap proses pembelajaran.\n\nMari bersama-sama membangun generasi Informatika yang tidak hanya unggul dalam pengetahuan, tetapi juga mampu beradaptasi, bekerja sama, dan memberikan kontribusi nyata.\n\nBerproses bersama, bertumbuh bersama, dan berdampak untuk sesama!\n\n#UniversitasWiraraja #HimatikaUnija #SalamSatuTeknik #BravoTeknik #LKMMTD26",
-    outputFileName: 'twibbon-lkmmtd26',
-} as const
+export const twibbonConfig = defaultContent.twibbon
