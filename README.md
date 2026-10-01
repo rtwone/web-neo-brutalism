@@ -19,7 +19,7 @@ Use a verified Resend domain for `RESEND_FROM_EMAIL` in production. Never expose
 
 ## Admin panel
 
-Run the complete `sql/schema.sql` file in Supabase, then configure `ADMIN_PASSWORD` and `ADMIN_SESSION_SECRET` server-side. Open `/admin` to edit the About photo, skills, projects, contact social links, Resend recipient email, and the endpoint discovery cards. The CMS stores its content in the `site_content` table; the contact API uses the saved recipient and falls back to `CONTACT_TO_EMAIL` when no CMS value exists.
+Run the complete `sql/schema.sql` file in Supabase, then configure `ADMIN_PASSWORD` and `ADMIN_SESSION_SECRET` server-side. Open `/admin` to edit the About photo, skills, projects, contact social links, Resend recipient email, endpoint discovery cards, and `/admin/twibbon` to edit the Twibbon title, eyebrow, subtitle, caption, and output filename. The CMS stores portfolio content in `site_content` and Twibbon settings in `twibbon_config`; the contact API uses the saved recipient and falls back to `CONTACT_TO_EMAIL` when no CMS value exists.
 
 For images, create a public Supabase Storage bucket named `portfolio-assets` and upload the files there. The admin page uploads images directly to that bucket and stores the public URL in the `site_content` JSON, so the media lives in Supabase instead of in the repo or as a local path.
 

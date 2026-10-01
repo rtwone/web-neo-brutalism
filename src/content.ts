@@ -645,11 +645,35 @@ export function sanitizeSiteContent(value?: Partial<SiteContent> | null): SiteCo
     }
 }
 
-export const twibbonConfig = {
+export type TwibbonConfig = {
+    title: string
+    subtitle: string
+    eyebrow: string
+    templatePath: string
+    captionTemplate: string
+    outputFileName: string
+}
+
+export const defaultTwibbonConfig: TwibbonConfig = {
     title: 'Buat Twibbon Kamu',
     subtitle: 'Upload foto kamu, sesuaikan posisinya, dan buat twibbon kamu sendiri dalam beberapa langkah.',
     eyebrow: 'CREATIVE TOOL',
     templatePath: '/images/twibbon.png',
     captionTemplate: "I'm Ready For LKMM-TD Teknik Informatika Universitas Wiraraja 2026 🚀\n\nHalo, saya {nama} dari Program Studi Teknik Informatika, siap menjadi bagian dari Latihan Keterampilan Manajemen Mahasiswa Tingkat Dasar (LKMM-TD) HIMATIKA 2026.\n\nDengan semangat “Membangun Generasi Informatika yang Adaptif, Kolaboratif, dan Berintegritas”, saya siap membuka diri terhadap hal-hal baru, memperkuat kerja sama, serta menumbuhkan sikap tanggung jawab dalam setiap proses pembelajaran.\n\nMari bersama-sama membangun generasi Informatika yang tidak hanya unggul dalam pengetahuan, tetapi juga mampu beradaptasi, bekerja sama, dan memberikan kontribusi nyata.\n\nBerproses bersama, bertumbuh bersama, dan berdampak untuk sesama!\n\n#UniversitasWiraraja #HimatikaUnija #SalamSatuTeknik #BravoTeknik #LKMMTD26",
     outputFileName: 'twibbon-lkmmtd26',
-} as const
+}
+
+export const sanitizeTwibbonConfig = (value?: Partial<TwibbonConfig> | null): TwibbonConfig => {
+    const source = value ?? {}
+    const text = (field: keyof TwibbonConfig) => typeof source[field] === 'string' ? source[field].trim() : defaultTwibbonConfig[field]
+    return {
+        title: text('title'),
+        subtitle: text('subtitle'),
+        eyebrow: text('eyebrow'),
+        templatePath: text('templatePath'),
+        captionTemplate: text('captionTemplate'),
+        outputFileName: text('outputFileName').replace(/[^a-zA-Z0-9_.-]/g, '-') || defaultTwibbonConfig.outputFileName,
+    }
+}
+
+export const twibbonConfig = defaultTwibbonConfig

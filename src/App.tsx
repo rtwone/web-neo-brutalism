@@ -129,7 +129,7 @@ function App() {
   const isProjectsPage = currentPath === '/projects'
   const isTwibbonPage = currentPath === '/twibbon'
   const isSpinViewPage = currentPath === '/spin-view'
-  const adminPaths = ['/admin', '/admin/about', '/admin/education', '/admin/experience', '/admin/socials', '/admin/skills', '/admin/projects', '/admin/endpoints']
+  const adminPaths = ['/admin', '/admin/about', '/admin/education', '/admin/experience', '/admin/socials', '/admin/skills', '/admin/projects', '/admin/endpoints', '/admin/twibbon']
   const isAdminPage = adminPaths.includes(currentPath)
   const t = translations[language]
 

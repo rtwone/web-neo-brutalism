@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { defaultContent, getLocalizedText, sanitizeSiteContent } from '../content'
-import type { JourneyEntry, SiteContent } from '../content'
+import { defaultContent, defaultTwibbonConfig, getLocalizedText, sanitizeSiteContent, sanitizeTwibbonConfig } from '../content'
+import type { JourneyEntry, SiteContent, TwibbonConfig } from '../content'
 import type { Project, Skill } from '../content'
 import { getSupabaseBrowser } from '../../lib/db'
 import './admin.css'
@@ -150,10 +150,11 @@ function SocialIcon({ name }: { name: SocialIconName }) {
 export function AdminPage() {
     type EditorTarget = { section: 'social' | 'skill' | 'project' | 'education' | 'experience' | 'endpoint'; index: number } | null
     const adminSection = window.location.pathname.split('/')[2] || 'dashboard'
-    const pageTitle = adminSection === 'dashboard' ? 'Dashboard' : ({ about: 'About & Contact', education: 'Education', experience: 'Experience', socials: 'Social media', skills: 'Skills', projects: 'Projects', endpoints: 'Endpoints' }[adminSection] || 'Dashboard')
+    const pageTitle = adminSection === 'dashboard' ? 'Dashboard' : ({ about: 'About & Contact', education: 'Education', experience: 'Experience', socials: 'Social media', skills: 'Skills', projects: 'Projects', endpoints: 'Endpoints', twibbon: 'Twibbon template' }[adminSection] || 'Dashboard')
     const [password, setPassword] = useState('')
     const [showPassword, setShowPassword] = useState(false)
     const [content, setContent] = useState<SiteContent>(() => normalizeContentImages(sanitizeSiteContent(defaultContent)))
+    const [twibbon, setTwibbon] = useState<TwibbonConfig>(defaultTwibbonConfig)
     const [authenticated, setAuthenticated] = useState(false)
     const [authChecked, setAuthChecked] = useState(false)
     const [message, setMessage] = useState('')
@@ -167,12 +168,17 @@ export function AdminPage() {
 
     const loadContent = async () => {
         const response = await fetch('/api/admin/content', { credentials: 'include' })
-        if (!response.ok) {
-            if (response.status === 401) return
-            return
+        if (response.ok) {
+            const data = await response.json() as { content?: Partial<SiteContent> | null }
+            if (data.content) setContent(normalizeContentImages(sanitizeSiteContent(data.content)))
         }
-        const data = await response.json() as { content?: Partial<SiteContent> | null }
-        if (data.content) setContent(normalizeContentImages(sanitizeSiteContent(data.content)))
+        if (adminSection === 'twibbon') {
+            const twibbonResponse = await fetch('/api/admin/twibbon', { credentials: 'include' })
+            if (twibbonResponse.ok) {
+                const twibbonData = await twibbonResponse.json() as { config?: Partial<TwibbonConfig> }
+                setTwibbon(sanitizeTwibbonConfig(twibbonData.config))
+            }
+        }
     }
 
     useEffect(() => {
@@ -393,6 +399,23 @@ export function AdminPage() {
 
     const save = async (event: React.FormEvent) => {
         event.preventDefault()
+        if (adminSection === 'twibbon') {
+            try {
+                const sanitizedTwibbon = sanitizeTwibbonConfig(twibbon)
+                const response = await fetch('/api/admin/twibbon', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(sanitizedTwibbon),
+                })
+                if (!response.ok) throw new Error()
+                setTwibbon(sanitizedTwibbon)
+                setMessage('Pengaturan twibbon tersimpan di Supabase.')
+            } catch {
+                setMessage('Gagal menyimpan pengaturan twibbon. Cek koneksi Supabase.')
+            }
+            return
+        }
         try {
             const sanitized = sanitizeSiteContent(content)
             const response = await fetch('/api/admin/content', {
@@ -467,6 +490,7 @@ export function AdminPage() {
                     <a className={`admin-sidebar-link ${adminSection === 'skills' ? 'is-active' : ''}`} href="/admin/skills"><span className="admin-sidebar-icon">06</span><strong>Skills</strong></a>
                     <a className={`admin-sidebar-link ${adminSection === 'projects' ? 'is-active' : ''}`} href="/admin/projects"><span className="admin-sidebar-icon">07</span><strong>Projects</strong></a>
                     <a className={`admin-sidebar-link ${adminSection === 'endpoints' ? 'is-active' : ''}`} href="/admin/endpoints"><span className="admin-sidebar-icon">08</span><strong>Endpoints</strong></a>
+                    <a className={`admin-sidebar-link ${adminSection === 'twibbon' ? 'is-active' : ''}`} href="/admin/twibbon"><span className="admin-sidebar-icon">09</span><strong>Twibbon</strong></a>
                     <span className="admin-sidebar-label">Sistem</span>
                     <a className="admin-sidebar-link" href="/"><span className="admin-sidebar-icon">↗</span><strong>Lihat portfolio</strong></a>
                     <button type="button" className="admin-sidebar-link admin-logout-link" onClick={() => void logout()}><span className="admin-sidebar-icon"><AdminIcon name="logout" /></span><strong>Logout</strong></button>
@@ -490,7 +514,26 @@ export function AdminPage() {
                                 { label: 'Experience', count: content.experience.length, path: '/admin/experience', tone: 'orange' },
                                 { label: 'Social media', count: content.socials.length, path: '/admin/socials', tone: 'pink' },
                                 { label: 'Endpoints', count: 2, path: '/admin/endpoints', tone: 'white' },
+                                { label: 'Twibbon', count: 1, path: '/admin/twibbon', tone: 'yellow' },
                             ].map((stat) => <a className={`admin-stat-card ${stat.tone}`} href={stat.path} key={stat.label}><span>{stat.label}</span><strong>{stat.count.toString().padStart(2, '0')}</strong><b>↗</b></a>)}
+                        </div>
+                    </section>}
+
+                    {adminSection === 'twibbon' && <section id="admin-twibbon" className="admin-section admin-twibbon-section">
+                        <h2>Manage twibbon template</h2>
+                        <p className="admin-section-intro">Atur teks dan caption yang dipakai generator twibbon. Foto template belum ditambahkan.</p>
+                        <div className="admin-fields">
+                            <label>Title<input value={twibbon.title} onChange={(event) => setTwibbon({ ...twibbon, title: event.target.value })} /></label>
+                            <label>Eyebrow<input value={twibbon.eyebrow} onChange={(event) => setTwibbon({ ...twibbon, eyebrow: event.target.value })} /></label>
+                            <label>Caption template<textarea className="admin-twibbon-caption" value={twibbon.captionTemplate} onChange={(event) => setTwibbon({ ...twibbon, captionTemplate: event.target.value })} /></label>
+                            <div className="admin-twibbon-meta">
+                                <label>Subtitle<textarea value={twibbon.subtitle} onChange={(event) => setTwibbon({ ...twibbon, subtitle: event.target.value })} /></label>
+                                <label>Output filename<input value={twibbon.outputFileName} onChange={(event) => setTwibbon({ ...twibbon, outputFileName: event.target.value })} /></label>
+                            </div>
+                        </div>
+                        <div className="admin-twibbon-placeholder">
+                            <strong>Template PNG</strong>
+                            <span>Belum ada foto template. Upload template dapat ditambahkan nanti tanpa mengubah pengaturan ini.</span>
                         </div>
                     </section>}
 

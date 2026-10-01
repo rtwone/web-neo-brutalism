@@ -14,7 +14,7 @@ Visitor Stats uses Supabase PostgreSQL through the server-only `SUPABASE_URL` an
 2. Open `sql/schema.sql` from this project.
 3. Run the complete file.
 
-This creates `site_stats`, `visitors`, `visitor_likes`, and `page_views`, including indexes, foreign keys, unique Like protection, and non-negative statistic constraints.
+This creates `site_stats`, `visitors`, `visitor_likes`, `page_views`, `site_content`, and `twibbon_config`, including indexes, foreign keys, unique Like protection, and non-negative statistic constraints.
 
 ## 3. Configure local development
 
@@ -63,5 +63,7 @@ GET  /api/stats?page=/
 POST /api/stats/view?page=/
 POST /api/stats/like?page=/
 ```
+
+The admin Twibbon settings are available at `/admin/twibbon`. The page stores text configuration in `twibbon_config`; the template image is intentionally not managed by this panel yet.
 
 The API does not accept client-provided Like or View totals. Rate-limited requests return HTTP 429 with a generic error response.

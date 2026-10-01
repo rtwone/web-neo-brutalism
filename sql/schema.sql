@@ -30,6 +30,12 @@ CREATE TABLE IF NOT EXISTS site_content (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS twibbon_config (
+    id VARCHAR(50) PRIMARY KEY,
+    config JSONB NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 ALTER TABLE site_stats DROP COLUMN IF EXISTS is_away;
 ALTER TABLE site_stats DROP COLUMN IF EXISTS updated_at;
 ALTER TABLE visitors DROP COLUMN IF EXISTS created_at;
