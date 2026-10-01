@@ -129,7 +129,7 @@ function App() {
   const isProjectsPage = currentPath === '/projects'
   const isTwibbonPage = currentPath === '/twibbon'
   const isSpinViewPage = currentPath === '/spin-view'
-  const adminPaths = ['/admin', '/admin/about', '/admin/education', '/admin/experience', '/admin/socials', '/admin/skills', '/admin/projects', '/admin/endpoints', '/admin/twibbon']
+  const adminPaths = ['/admin', '/admin/about', '/admin/education', '/admin/experience', '/admin/socials', '/admin/skills', '/admin/projects', '/admin/endpoints']
   const isAdminPage = adminPaths.includes(currentPath)
   const t = translations[language]
 
@@ -382,7 +382,7 @@ function App() {
         {isAdminPage ? <AdminPage /> : isSpinViewPage ? (
           <SpinViewPage language={language} />
         ) : isTwibbonPage ? (
-          <TwibbonPage config={content.twibbon} />
+          <TwibbonPage />
         ) : isProjectsPage ? (
           <ProjectsPage language={language} projects={content.projects} />
         ) : <>

@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { twibbonConfig as defaultTwibbonConfig } from '../content'
-import type { TwibbonConfig } from '../content'
+import { twibbonConfig } from '../content'
 
-export function TwibbonPage({ config = defaultTwibbonConfig }: { config?: TwibbonConfig }) {
+export function TwibbonPage() {
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const templateRef = useRef<HTMLImageElement | null>(null)
     const photoRef = useRef<HTMLImageElement | null>(null)
@@ -19,16 +18,16 @@ export function TwibbonPage({ config = defaultTwibbonConfig }: { config?: Twibbo
     const renderCanvasRef = useRef<() => void>(() => { })
 
     const placeholderNames = Array.from(new Set(
-        Array.from(config.captionTemplate.matchAll(/\{([^{}]+)\}/g), ([, name]) => name.trim()).filter(Boolean),
+        Array.from(twibbonConfig.captionTemplate.matchAll(/\{([^{}]+)\}/g), ([, name]) => name.trim()).filter(Boolean),
     ))
 
-    const resolvedCaption = config.captionTemplate.replace(/\{([^{}]+)\}/g, (_match, name: string) => {
+    const resolvedCaption = twibbonConfig.captionTemplate.replace(/\{([^{}]+)\}/g, (_match, name: string) => {
         const key = name.trim()
         return captionFields[key] || `{${name}}`
     })
 
     const hasEmptyCaptionField = placeholderNames.some((name) => !captionFields[name]?.trim())
-    const captionParts = config.captionTemplate.split(/(\{[^{}]+\})/g)
+    const captionParts = twibbonConfig.captionTemplate.split(/(\{[^{}]+\})/g)
     const formattedCaption = captionParts.map((part, index) => {
         const placeholder = part.match(/^\{([^{}]+)\}$/)
         if (!placeholder) return <span key={`${part}-${index}`}>{part}</span>
@@ -70,8 +69,8 @@ export function TwibbonPage({ config = defaultTwibbonConfig }: { config?: Twibbo
             templateRef.current = template
             renderCanvasRef.current()
         }
-        template.src = config.templatePath
-    }, [config.templatePath])
+        template.src = twibbonConfig.templatePath
+    }, [])
 
     useEffect(() => {
         renderCanvas()
@@ -209,7 +208,7 @@ export function TwibbonPage({ config = defaultTwibbonConfig }: { config?: Twibbo
         const url = URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.download = config.outputFileName
+        link.download = twibbonConfig.outputFileName
         document.body.appendChild(link)
         link.click()
         link.remove()
@@ -270,9 +269,9 @@ export function TwibbonPage({ config = defaultTwibbonConfig }: { config?: Twibbo
             )}
             <section className="twibbon-hero">
                 <div>
-                    <span className="eyebrow">{config.eyebrow}</span>
-                    <h1>{config.title} <i>✦</i></h1>
-                    <p>{config.subtitle}</p>
+                    <span className="eyebrow">{twibbonConfig.eyebrow}</span>
+                    <h1>{twibbonConfig.title} <i>✦</i></h1>
+                    <p>{twibbonConfig.subtitle}</p>
                 </div>
                 <div className="twibbon-hero-sticker" aria-hidden="true">MAKE<br />IT<br /><b>YOURS</b></div>
             </section>
