@@ -72,11 +72,15 @@
 }
 
 .admin-twibbon-section .admin-fields {
-    max-width: 900px;
+    width: 100%;
+    max-width: none;
+}
+
+.admin-twibbon-caption-field {
+    grid-column: 1 / -1;
 }
 
 .admin-page textarea.admin-twibbon-caption {
-    grid-column: 1 / -1;
     min-height: 420px;
     line-height: 1.6;
 }
@@ -97,7 +101,8 @@
 .admin-twibbon-placeholder {
     display: grid;
     gap: 8px;
-    max-width: 900px;
+    width: 100%;
+    max-width: none;
     margin-top: 22px;
     padding: 18px;
     border: 2px dashed var(--line);
@@ -1376,4 +1381,23 @@
 
 .admin-sidebar-link strong {
     font-weight: 400;
+}
+
+.admin-sidebar-dirty {
+    display: inline-grid;
+    min-width: 20px;
+    height: 20px;
+    margin-left: auto;
+    place-items: center;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    color: #141414;
+    background: var(--yellow);
+    font: 700 10px Consolas, var(--mono);
+    line-height: 1;
+}
+
+.admin-header-status.is-dirty {
+    color: #141414;
+    background: var(--yellow);
 }

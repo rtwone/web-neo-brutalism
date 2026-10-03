@@ -155,6 +155,8 @@ export function AdminPage() {
     const [showPassword, setShowPassword] = useState(false)
     const [content, setContent] = useState<SiteContent>(() => normalizeContentImages(sanitizeSiteContent(defaultContent)))
     const [twibbon, setTwibbon] = useState<TwibbonConfig>(defaultTwibbonConfig)
+    const [savedContent, setSavedContent] = useState<SiteContent | null>(null)
+    const [savedTwibbon, setSavedTwibbon] = useState<TwibbonConfig | null>(null)
     const [authenticated, setAuthenticated] = useState(false)
     const [authChecked, setAuthChecked] = useState(false)
     const [message, setMessage] = useState('')
@@ -170,13 +172,19 @@ export function AdminPage() {
         const response = await fetch('/api/admin/content', { credentials: 'include' })
         if (response.ok) {
             const data = await response.json() as { content?: Partial<SiteContent> | null }
-            if (data.content) setContent(normalizeContentImages(sanitizeSiteContent(data.content)))
+            if (data.content) {
+                const loadedContent = normalizeContentImages(sanitizeSiteContent(data.content))
+                setContent(loadedContent)
+                setSavedContent(loadedContent)
+            }
         }
         if (adminSection === 'twibbon') {
             const twibbonResponse = await fetch('/api/admin/twibbon', { credentials: 'include' })
             if (twibbonResponse.ok) {
                 const twibbonData = await twibbonResponse.json() as { config?: Partial<TwibbonConfig> }
-                setTwibbon(sanitizeTwibbonConfig(twibbonData.config))
+                const loadedTwibbon = sanitizeTwibbonConfig(twibbonData.config)
+                setTwibbon(loadedTwibbon)
+                setSavedTwibbon(loadedTwibbon)
             }
         }
     }
@@ -247,6 +255,19 @@ export function AdminPage() {
     }
 
     const updateContent = (nextContent: SiteContent) => setContent(nextContent)
+
+    const isContentSectionDirty = (section: string) => {
+        if (!savedContent) return false
+        if (section === 'about') return content.aboutImage !== savedContent.aboutImage || content.contactEmail !== savedContent.contactEmail
+        if (section === 'education' || section === 'experience' || section === 'socials' || section === 'skills' || section === 'projects') {
+            return JSON.stringify(content[section]) !== JSON.stringify(savedContent[section])
+        }
+        if (section === 'endpoints') return JSON.stringify(content.endpointDiscovery) !== JSON.stringify(savedContent.endpointDiscovery)
+        return false
+    }
+
+    const isTwibbonDirty = savedTwibbon !== null && JSON.stringify(twibbon) !== JSON.stringify(savedTwibbon)
+    const isAnyDirty = ['about', 'education', 'experience', 'socials', 'skills', 'projects', 'endpoints'].some(isContentSectionDirty) || isTwibbonDirty
 
     const addEndpointCard = () => {
         const index = (content.endpointDiscovery.custom ?? []).length
@@ -410,6 +431,7 @@ export function AdminPage() {
                 })
                 if (!response.ok) throw new Error()
                 setTwibbon(sanitizedTwibbon)
+                setSavedTwibbon(sanitizedTwibbon)
                 setMessage('Pengaturan twibbon tersimpan di Supabase.')
             } catch {
                 setMessage('Gagal menyimpan pengaturan twibbon. Cek koneksi Supabase.')
@@ -426,6 +448,7 @@ export function AdminPage() {
             if (!response.ok) throw new Error()
             setMessage('Perubahan tersimpan di Supabase dan akan tampil di halaman publik.')
             setContent(sanitized)
+            setSavedContent(sanitized)
         } catch {
             setMessage('Gagal menyimpan. Cek koneksi Supabase dan data yang diisi.')
         }
@@ -481,16 +504,16 @@ export function AdminPage() {
                 <aside className={`admin-sidebar ${mobileNavOpen ? 'is-open' : ''}`} aria-label="Navigasi admin">
                     <div className="admin-sidebar-brand"><span className="admin-brand-mark">IH</span><div><strong>Portfolio</strong><small>Control center</small></div><button type="button" className="admin-mobile-nav-close" onClick={() => setMobileNavOpen(false)} aria-label="Tutup navigasi admin"><AdminIcon name="close" /></button></div>
                     <span className="admin-sidebar-label">Navigasi</span>
-                    <a className={`admin-sidebar-link ${adminSection === 'dashboard' ? 'is-active' : ''}`} href="/admin"><span className="admin-sidebar-icon">01</span><strong>Dashboard</strong></a>
+                    <a className={`admin-sidebar-link ${adminSection === 'dashboard' ? 'is-active' : ''}`} href="/admin"><span className="admin-sidebar-icon">01</span><strong>Dashboard</strong>{isAnyDirty && <span className="admin-sidebar-dirty" title="Ada perubahan belum disimpan">M</span>}</a>
                     <span className="admin-sidebar-label">Konten</span>
-                    <a className={`admin-sidebar-link ${adminSection === 'about' ? 'is-active' : ''}`} href="/admin/about"><span className="admin-sidebar-icon">02</span><strong>About & Contact</strong></a>
-                    <a className={`admin-sidebar-link ${adminSection === 'education' ? 'is-active' : ''}`} href="/admin/education"><span className="admin-sidebar-icon">03</span><strong>Education</strong></a>
-                    <a className={`admin-sidebar-link ${adminSection === 'experience' ? 'is-active' : ''}`} href="/admin/experience"><span className="admin-sidebar-icon">04</span><strong>Experience</strong></a>
-                    <a className={`admin-sidebar-link ${adminSection === 'socials' ? 'is-active' : ''}`} href="/admin/socials"><span className="admin-sidebar-icon">05</span><strong>Social media</strong></a>
-                    <a className={`admin-sidebar-link ${adminSection === 'skills' ? 'is-active' : ''}`} href="/admin/skills"><span className="admin-sidebar-icon">06</span><strong>Skills</strong></a>
-                    <a className={`admin-sidebar-link ${adminSection === 'projects' ? 'is-active' : ''}`} href="/admin/projects"><span className="admin-sidebar-icon">07</span><strong>Projects</strong></a>
-                    <a className={`admin-sidebar-link ${adminSection === 'endpoints' ? 'is-active' : ''}`} href="/admin/endpoints"><span className="admin-sidebar-icon">08</span><strong>Endpoints</strong></a>
-                    <a className={`admin-sidebar-link ${adminSection === 'twibbon' ? 'is-active' : ''}`} href="/admin/twibbon"><span className="admin-sidebar-icon">09</span><strong>Twibbon</strong></a>
+                    <a className={`admin-sidebar-link ${adminSection === 'about' ? 'is-active' : ''}`} href="/admin/about"><span className="admin-sidebar-icon">02</span><strong>About & Contact</strong>{isContentSectionDirty('about') && <span className="admin-sidebar-dirty" title="Ada perubahan belum disimpan">M</span>}</a>
+                    <a className={`admin-sidebar-link ${adminSection === 'education' ? 'is-active' : ''}`} href="/admin/education"><span className="admin-sidebar-icon">03</span><strong>Education</strong>{isContentSectionDirty('education') && <span className="admin-sidebar-dirty" title="Ada perubahan belum disimpan">M</span>}</a>
+                    <a className={`admin-sidebar-link ${adminSection === 'experience' ? 'is-active' : ''}`} href="/admin/experience"><span className="admin-sidebar-icon">04</span><strong>Experience</strong>{isContentSectionDirty('experience') && <span className="admin-sidebar-dirty" title="Ada perubahan belum disimpan">M</span>}</a>
+                    <a className={`admin-sidebar-link ${adminSection === 'socials' ? 'is-active' : ''}`} href="/admin/socials"><span className="admin-sidebar-icon">05</span><strong>Social media</strong>{isContentSectionDirty('socials') && <span className="admin-sidebar-dirty" title="Ada perubahan belum disimpan">M</span>}</a>
+                    <a className={`admin-sidebar-link ${adminSection === 'skills' ? 'is-active' : ''}`} href="/admin/skills"><span className="admin-sidebar-icon">06</span><strong>Skills</strong>{isContentSectionDirty('skills') && <span className="admin-sidebar-dirty" title="Ada perubahan belum disimpan">M</span>}</a>
+                    <a className={`admin-sidebar-link ${adminSection === 'projects' ? 'is-active' : ''}`} href="/admin/projects"><span className="admin-sidebar-icon">07</span><strong>Projects</strong>{isContentSectionDirty('projects') && <span className="admin-sidebar-dirty" title="Ada perubahan belum disimpan">M</span>}</a>
+                    <a className={`admin-sidebar-link ${adminSection === 'endpoints' ? 'is-active' : ''}`} href="/admin/endpoints"><span className="admin-sidebar-icon">08</span><strong>Endpoints</strong>{isContentSectionDirty('endpoints') && <span className="admin-sidebar-dirty" title="Ada perubahan belum disimpan">M</span>}</a>
+                    <a className={`admin-sidebar-link ${adminSection === 'twibbon' ? 'is-active' : ''}`} href="/admin/twibbon"><span className="admin-sidebar-icon">09</span><strong>Twibbon</strong>{isTwibbonDirty && <span className="admin-sidebar-dirty" title="Ada perubahan belum disimpan">M</span>}</a>
                     <span className="admin-sidebar-label">Sistem</span>
                     <a className="admin-sidebar-link" href="/"><span className="admin-sidebar-icon">↗</span><strong>Lihat portfolio</strong></a>
                     <button type="button" className="admin-sidebar-link admin-logout-link" onClick={() => void logout()}><span className="admin-sidebar-icon"><AdminIcon name="logout" /></span><strong>Logout</strong></button>
@@ -501,7 +524,7 @@ export function AdminPage() {
                             <span className="eyebrow">ADMIN / PORTFOLIO CMS</span>
                             <h1>{pageTitle}</h1>
                         </div>
-                        <span className="admin-header-status">CLOUD CMS / READY</span>
+                        <span className={`admin-header-status ${isAnyDirty ? 'is-dirty' : ''}`}>{isAnyDirty ? 'LOCAL CHANGES / UNSAVED' : 'CLOUD CMS / READY'}</span>
                     </header>
 
                     {adminSection === 'dashboard' && <section className="admin-dashboard-content">
@@ -525,7 +548,7 @@ export function AdminPage() {
                         <div className="admin-fields">
                             <label>Title<input value={twibbon.title} onChange={(event) => setTwibbon({ ...twibbon, title: event.target.value })} /></label>
                             <label>Eyebrow<input value={twibbon.eyebrow} onChange={(event) => setTwibbon({ ...twibbon, eyebrow: event.target.value })} /></label>
-                            <label>Caption template<textarea className="admin-twibbon-caption" value={twibbon.captionTemplate} onChange={(event) => setTwibbon({ ...twibbon, captionTemplate: event.target.value })} /></label>
+                            <label className="admin-twibbon-caption-field">Caption template<textarea className="admin-twibbon-caption" value={twibbon.captionTemplate} onChange={(event) => setTwibbon({ ...twibbon, captionTemplate: event.target.value })} /></label>
                             <div className="admin-twibbon-meta">
                                 <label>Subtitle<textarea value={twibbon.subtitle} onChange={(event) => setTwibbon({ ...twibbon, subtitle: event.target.value })} /></label>
                                 <label>Output filename<input value={twibbon.outputFileName} onChange={(event) => setTwibbon({ ...twibbon, outputFileName: event.target.value })} /></label>
