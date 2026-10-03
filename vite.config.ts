@@ -127,6 +127,30 @@ function spinViewApi(): Plugin {
   }
 }
 
+function publicContentApi(): Plugin {
+  return {
+    name: 'local-public-content-api',
+    configureServer(server) {
+      loadRuntimeEnv()
+      server.middlewares.use('/api/content', async (request, response, next) => {
+        if (request.method !== 'GET') { next(); return }
+        const { default: content } = await import('./api/content.js')
+        const apiResponse = {
+          status: (status: number) => {
+            response.statusCode = status
+            return apiResponse
+          },
+          json: (body: object) => {
+            response.setHeader('Content-Type', 'application/json')
+            response.end(JSON.stringify(body))
+          },
+        }
+        await content({ method: request.method }, apiResponse)
+      })
+    },
+  }
+}
+
 function adminApi(): Plugin {
   return {
     name: 'local-admin-api',
@@ -148,6 +172,7 @@ function adminApi(): Plugin {
               },
               json: (value: object) => { response.setHeader('Content-Type', 'application/json'); response.end(JSON.stringify(value)) },
             }
+
             const headers = { ...request.headers, cookie: request.headers.cookie }
             if (url.pathname === '/api/admin/login') {
               const { default: login } = await import('./api/admin/login.js')
@@ -158,6 +183,9 @@ function adminApi(): Plugin {
             } else if (url.pathname === '/api/admin/content') {
               const { default: content } = await import('./api/admin/content.js')
               await content({ method: request.method, headers, body }, apiResponse)
+            } else if (url.pathname === '/api/admin/media') {
+              const { default: media } = await import('./api/admin/media.js')
+              await media({ method: request.method, headers, body }, apiResponse)
             } else next()
           } catch { response.statusCode = 400; response.end(JSON.stringify({ error: 'Invalid request' })) }
         })
@@ -168,5 +196,5 @@ function adminApi(): Plugin {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), contactApi(), statsApi(), spinViewApi(), adminApi()],
+  plugins: [react(), contactApi(), statsApi(), spinViewApi(), publicContentApi(), adminApi()],
 })

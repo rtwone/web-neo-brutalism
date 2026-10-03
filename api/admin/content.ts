@@ -1,6 +1,7 @@
 import { hasAdminSession } from '../../lib/admin.js'
 import { getSupabase } from '../../lib/db.js'
 import { defaultContent, sanitizeSiteContent } from '../../src/content.js'
+import { isSameOriginRequest } from '../../lib/csrf.js'
 
 type Request = { method?: string; headers?: Record<string, string | string[] | undefined>; body?: unknown }
 type Response = { status: (status: number) => Response; json: (body: object) => void }
@@ -25,6 +26,7 @@ const ensurePortfolioSeed = async () => {
 
 export default async function handler(request: Request, response: Response) {
     if (request.method === 'GET') {
+        if (!isSessionValid(request)) return response.status(401).json({ error: 'Authentication required' })
         try {
             const { data, error } = await getSupabase().from('site_content').select('content').eq('id', 'portfolio').maybeSingle()
             if (error) return response.status(500).json({ error: 'Unable to load content' })
@@ -37,6 +39,7 @@ export default async function handler(request: Request, response: Response) {
 
     if (request.method !== 'PUT') return response.status(405).json({ error: 'Method not allowed' })
     if (!isSessionValid(request)) return response.status(401).json({ error: 'Authentication required' })
+    if (!isSameOriginRequest(request.headers)) return response.status(403).json({ error: 'Invalid request origin' })
     if (!request.body || typeof request.body !== 'object') return response.status(400).json({ error: 'Invalid content' })
 
     try {

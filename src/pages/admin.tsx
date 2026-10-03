@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { defaultContent, defaultTwibbonConfig, getLocalizedText, sanitizeSiteContent, sanitizeTwibbonConfig } from '../content'
-import type { JourneyEntry, SiteContent, TwibbonConfig } from '../content'
+import type { JourneyEntry, SeoMetadata, SiteContent, TwibbonConfig } from '../content'
 import type { Project, Skill } from '../content'
 import { getSupabaseBrowser } from '../../lib/db'
 import './admin.css'
@@ -150,7 +150,7 @@ function SocialIcon({ name }: { name: SocialIconName }) {
 export function AdminPage() {
     type EditorTarget = { section: 'social' | 'skill' | 'project' | 'education' | 'experience' | 'endpoint'; index: number } | null
     const adminSection = window.location.pathname.split('/')[2] || 'dashboard'
-    const pageTitle = adminSection === 'dashboard' ? 'Dashboard' : ({ about: 'About & Contact', education: 'Education', experience: 'Experience', socials: 'Social media', skills: 'Skills', projects: 'Projects', endpoints: 'Endpoints', twibbon: 'Twibbon template' }[adminSection] || 'Dashboard')
+    const pageTitle = adminSection === 'dashboard' ? 'Dashboard' : ({ about: 'About & Contact', education: 'Education', experience: 'Experience', socials: 'Social media', skills: 'Skills', projects: 'Projects', endpoints: 'Endpoints', twibbon: 'Twibbon template', seo: 'SEO metadata', media: 'Media library' }[adminSection] || 'Dashboard')
     const [password, setPassword] = useState('')
     const [showPassword, setShowPassword] = useState(false)
     const [content, setContent] = useState<SiteContent>(() => normalizeContentImages(sanitizeSiteContent(defaultContent)))
@@ -163,10 +163,29 @@ export function AdminPage() {
     const [isMessageVisible, setIsMessageVisible] = useState(false)
     const [uploading, setUploading] = useState(false)
     const [editorTarget, setEditorTarget] = useState<EditorTarget>(null)
-    const [deleteConfirmation, setDeleteConfirmation] = useState<{ label: string; remove: () => void } | null>(null)
+    const [deleteConfirmation, setDeleteConfirmation] = useState<{ label: string; remove: () => void | Promise<void> } | null>(null)
     const [mobileNavOpen, setMobileNavOpen] = useState(false)
+    const [draftAvailable, setDraftAvailable] = useState(false)
+    const [draftTimestamp, setDraftTimestamp] = useState<string | null>(null)
+    const [saveStatus, setSaveStatus] = useState<'saved' | 'modified' | 'saving' | 'error'>('saved')
+    const [mediaAssets, setMediaAssets] = useState<Array<{ name: string; bucket: string; path: string; url: string; size?: number; updated_at?: string; mimetype?: string }>>([])
+    const [copiedMediaUrl, setCopiedMediaUrl] = useState<string | null>(null)
+    const [mediaSearch, setMediaSearch] = useState('')
+    const [mediaTypeFilter, setMediaTypeFilter] = useState<'all' | 'image' | 'other'>('all')
+    const [selectedMedia, setSelectedMedia] = useState<typeof mediaAssets[number] | null>(null)
+    const [history, setHistory] = useState<Array<{ content: SiteContent; twibbon: TwibbonConfig }>>([])
+    const [historyIndex, setHistoryIndex] = useState(-1)
+    const historyReady = useRef(false)
+    const restoringDraft = useRef(false)
+    const draftKey = 'admin-portfolio-draft-v1'
 
     const isEditorOpen = (section: NonNullable<EditorTarget>['section'], index: number) => editorTarget?.section === section && editorTarget.index === index
+    const filteredMediaAssets = mediaAssets.filter((asset) => {
+        const query = mediaSearch.trim().toLowerCase()
+        const matchesSearch = !query || `${asset.name} ${asset.bucket} ${asset.path}`.toLowerCase().includes(query)
+        const isImage = asset.mimetype?.startsWith('image/') || /\.(avif|gif|jpe?g|png|svg|webp)$/i.test(asset.name)
+        return matchesSearch && (mediaTypeFilter === 'all' || (mediaTypeFilter === 'image' ? isImage : !isImage))
+    })
 
     const loadContent = async () => {
         const response = await fetch('/api/admin/content', { credentials: 'include' })
@@ -187,6 +206,12 @@ export function AdminPage() {
                 setSavedTwibbon(loadedTwibbon)
             }
         }
+        if (adminSection === 'media') {
+            const mediaResponse = await fetch('/api/admin/media', { credentials: 'include' })
+            const mediaData = await mediaResponse.json() as { assets?: Array<{ name: string; bucket: string; path: string; url: string; size?: number; updated_at?: string; mimetype?: string }>; error?: string }
+            if (!mediaResponse.ok) throw new Error(mediaData.error || 'Media gagal dimuat.')
+            setMediaAssets(mediaData.assets ?? [])
+        }
     }
 
     useEffect(() => {
@@ -202,6 +227,43 @@ export function AdminPage() {
             void loadContent()
         }
     }, [authChecked, authenticated])
+
+    useEffect(() => {
+        if (!savedContent || historyReady.current) return
+        historyReady.current = true
+        setHistory([{ content, twibbon }])
+        setHistoryIndex(0)
+        const rawDraft = window.localStorage.getItem(draftKey)
+        if (!rawDraft) return
+        try {
+            const draft = JSON.parse(rawDraft) as { content?: SiteContent; twibbon?: TwibbonConfig; updatedAt?: string }
+            if (draft.content || draft.twibbon) {
+                setDraftAvailable(true)
+                setDraftTimestamp(draft.updatedAt ?? null)
+            }
+        } catch {
+            window.localStorage.removeItem(draftKey)
+        }
+    }, [savedContent, content, twibbon])
+
+    useEffect(() => {
+        if (!historyReady.current || restoringDraft.current) return
+        const current = { content, twibbon }
+        const previous = history[historyIndex]
+        if (previous && JSON.stringify(previous) === JSON.stringify(current)) return
+        const nextHistory = history.slice(0, historyIndex + 1)
+        nextHistory.push(current)
+        setHistory(nextHistory.slice(-50))
+        setHistoryIndex(Math.min(nextHistory.length - 1, 49))
+        setSaveStatus('modified')
+        const timer = window.setTimeout(() => {
+            const updatedAt = new Date().toISOString()
+            window.localStorage.setItem(draftKey, JSON.stringify({ ...current, updatedAt }))
+            setDraftTimestamp(updatedAt)
+            setDraftAvailable(true)
+        }, 350)
+        return () => window.clearTimeout(timer)
+    }, [content, twibbon])
 
     useEffect(() => {
         if (!message) {
@@ -256,6 +318,71 @@ export function AdminPage() {
 
     const updateContent = (nextContent: SiteContent) => setContent(nextContent)
 
+    const restoreDraft = () => {
+        const rawDraft = window.localStorage.getItem(draftKey)
+        if (!rawDraft) return
+        try {
+            const draft = JSON.parse(rawDraft) as { content?: SiteContent; twibbon?: TwibbonConfig }
+            restoringDraft.current = true
+            if (draft.content) setContent(normalizeContentImages(sanitizeSiteContent(draft.content)))
+            if (draft.twibbon) setTwibbon(sanitizeTwibbonConfig(draft.twibbon))
+            window.setTimeout(() => { restoringDraft.current = false }, 0)
+            setDraftAvailable(false)
+            setSaveStatus('modified')
+            setMessage('Draft berhasil dipulihkan. Simpan untuk menerapkan perubahan.')
+        } catch {
+            setMessage('Draft tidak dapat dipulihkan.')
+        }
+    }
+
+    const discardDraft = () => {
+        window.localStorage.removeItem(draftKey)
+        setDraftAvailable(false)
+        setDraftTimestamp(null)
+        setContent(savedContent ?? content)
+        setTwibbon(savedTwibbon ?? twibbon)
+        setSaveStatus('saved')
+        setMessage('Semua perubahan lokal dibuang.')
+    }
+
+    const undo = () => {
+        if (historyIndex <= 0) return
+        const snapshot = history[historyIndex - 1]
+        restoringDraft.current = true
+        setContent(snapshot.content)
+        setTwibbon(snapshot.twibbon)
+        setHistoryIndex(historyIndex - 1)
+        window.setTimeout(() => { restoringDraft.current = false }, 0)
+        setSaveStatus('modified')
+    }
+
+    const redo = () => {
+        if (historyIndex >= history.length - 1) return
+        const snapshot = history[historyIndex + 1]
+        restoringDraft.current = true
+        setContent(snapshot.content)
+        setTwibbon(snapshot.twibbon)
+        setHistoryIndex(historyIndex + 1)
+        window.setTimeout(() => { restoringDraft.current = false }, 0)
+        setSaveStatus('modified')
+    }
+
+    const validateBeforeSave = () => {
+        const errors: string[] = []
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(content.contactEmail)) errors.push('Email contact tidak valid.')
+        const endpoints = [content.endpointDiscovery.twibbon, content.endpointDiscovery.spinView, ...(content.endpointDiscovery.custom ?? [])]
+        const paths = endpoints.map((endpoint) => endpoint.path.trim()).filter(Boolean)
+        if (paths.some((path) => !path.startsWith('/'))) errors.push('Path endpoint harus diawali /.')
+        if (new Set(paths).size !== paths.length) errors.push('Path endpoint tidak boleh duplikat.')
+        content.socials.forEach((social, index) => {
+            if (social.url && !/^(mailto:|https?:\/\/)/i.test(social.url)) errors.push(`URL social media #${index + 1} tidak valid.`)
+        })
+        content.projects.forEach((project, index) => {
+            if (project.category !== 'Design' && !project.title.trim()) errors.push(`Judul project #${index + 1} wajib diisi.`)
+        })
+        return errors
+    }
+
     const isContentSectionDirty = (section: string) => {
         if (!savedContent) return false
         if (section === 'about') return content.aboutImage !== savedContent.aboutImage || content.contactEmail !== savedContent.contactEmail
@@ -263,11 +390,33 @@ export function AdminPage() {
             return JSON.stringify(content[section]) !== JSON.stringify(savedContent[section])
         }
         if (section === 'endpoints') return JSON.stringify(content.endpointDiscovery) !== JSON.stringify(savedContent.endpointDiscovery)
+        if (section === 'seo') return JSON.stringify(content.seo) !== JSON.stringify(savedContent.seo)
         return false
     }
 
+    const isItemDirty = (section: NonNullable<EditorTarget>['section'], index: number) => {
+        if (!savedContent) return false
+        if (section === 'education' || section === 'experience') {
+            return JSON.stringify(content[section][index]) !== JSON.stringify(savedContent[section][index])
+        }
+        if (section === 'social') return JSON.stringify(content.socials[index]) !== JSON.stringify(savedContent.socials[index])
+        if (section === 'skill') return JSON.stringify(content.skills[index]) !== JSON.stringify(savedContent.skills[index])
+        if (section === 'project') return JSON.stringify(content.projects[index]) !== JSON.stringify(savedContent.projects[index])
+        const currentEndpoint = index === 0
+            ? content.endpointDiscovery.twibbon
+            : index === 1
+                ? content.endpointDiscovery.spinView
+                : content.endpointDiscovery.custom?.[index - 2]
+        const savedEndpoint = index === 0
+            ? savedContent.endpointDiscovery.twibbon
+            : index === 1
+                ? savedContent.endpointDiscovery.spinView
+                : savedContent.endpointDiscovery.custom?.[index - 2]
+        return JSON.stringify(currentEndpoint) !== JSON.stringify(savedEndpoint)
+    }
+
     const isTwibbonDirty = savedTwibbon !== null && JSON.stringify(twibbon) !== JSON.stringify(savedTwibbon)
-    const isAnyDirty = ['about', 'education', 'experience', 'socials', 'skills', 'projects', 'endpoints'].some(isContentSectionDirty) || isTwibbonDirty
+    const isAnyDirty = ['about', 'education', 'experience', 'socials', 'skills', 'projects', 'endpoints', 'seo'].some(isContentSectionDirty) || isTwibbonDirty
 
     const addEndpointCard = () => {
         const index = (content.endpointDiscovery.custom ?? []).length
@@ -278,15 +427,33 @@ export function AdminPage() {
                 custom: [
                     ...(currentContent.endpointDiscovery.custom ?? []),
                     {
+                        id: `custom-${Date.now()}`,
                         label: '',
                         title: { id: '', en: '' },
                         description: { id: '', en: '' },
                         path: '',
+                        active: true,
+                        order: index + 2,
                     },
                 ],
             },
         }))
         setEditorTarget({ section: 'endpoint', index: 2 + index })
+    }
+
+    const updateEndpointAt = (index: number, update: (endpoint: NonNullable<SiteContent['endpointDiscovery']['custom']>[number]) => NonNullable<SiteContent['endpointDiscovery']['custom']>[number]) => {
+        if (index < 2) {
+            const key = index === 0 ? 'twibbon' : 'spinView'
+            updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, [key]: update(content.endpointDiscovery[key]) } })
+            return
+        }
+        updateContent({
+            ...content,
+            endpointDiscovery: {
+                ...content.endpointDiscovery,
+                custom: (content.endpointDiscovery.custom ?? []).map((endpoint, itemIndex) => itemIndex === index - 2 ? update(endpoint) : endpoint),
+            },
+        })
     }
 
     const isJourneyItemEmpty = (item: JourneyEntry) => !getLocalizedText(item.title, 'id').trim() && !getLocalizedText(item.period, 'id').trim() && !getLocalizedText(item.subtitle, 'id').trim() && !getLocalizedText(item.badge, 'id').trim()
@@ -351,7 +518,7 @@ export function AdminPage() {
         setEditorTarget(null)
     }
 
-    const confirmDelete = (label: string, remove: () => void) => {
+    const confirmDelete = (label: string, remove: () => void | Promise<void>) => {
         setDeleteConfirmation({ label, remove })
     }
 
@@ -420,6 +587,13 @@ export function AdminPage() {
 
     const save = async (event: React.FormEvent) => {
         event.preventDefault()
+        const validationErrors = validateBeforeSave()
+        if (validationErrors.length) {
+            setMessage(validationErrors[0])
+            setSaveStatus('error')
+            return
+        }
+        setSaveStatus('saving')
         if (adminSection === 'twibbon') {
             try {
                 const sanitizedTwibbon = sanitizeTwibbonConfig(twibbon)
@@ -432,6 +606,10 @@ export function AdminPage() {
                 if (!response.ok) throw new Error()
                 setTwibbon(sanitizedTwibbon)
                 setSavedTwibbon(sanitizedTwibbon)
+                window.localStorage.removeItem(draftKey)
+                setDraftAvailable(false)
+                setDraftTimestamp(null)
+                setSaveStatus('saved')
                 setMessage('Pengaturan twibbon tersimpan di Supabase.')
             } catch {
                 setMessage('Gagal menyimpan pengaturan twibbon. Cek koneksi Supabase.')
@@ -449,8 +627,13 @@ export function AdminPage() {
             setMessage('Perubahan tersimpan di Supabase dan akan tampil di halaman publik.')
             setContent(sanitized)
             setSavedContent(sanitized)
+            window.localStorage.removeItem(draftKey)
+            setDraftAvailable(false)
+            setDraftTimestamp(null)
+            setSaveStatus('saved')
         } catch {
             setMessage('Gagal menyimpan. Cek koneksi Supabase dan data yang diisi.')
+            setSaveStatus('error')
         }
     }
 
@@ -514,6 +697,8 @@ export function AdminPage() {
                     <a className={`admin-sidebar-link ${adminSection === 'projects' ? 'is-active' : ''}`} href="/admin/projects"><span className="admin-sidebar-icon">07</span><strong>Projects</strong>{isContentSectionDirty('projects') && <span className="admin-sidebar-dirty" title="Ada perubahan belum disimpan">M</span>}</a>
                     <a className={`admin-sidebar-link ${adminSection === 'endpoints' ? 'is-active' : ''}`} href="/admin/endpoints"><span className="admin-sidebar-icon">08</span><strong>Endpoints</strong>{isContentSectionDirty('endpoints') && <span className="admin-sidebar-dirty" title="Ada perubahan belum disimpan">M</span>}</a>
                     <a className={`admin-sidebar-link ${adminSection === 'twibbon' ? 'is-active' : ''}`} href="/admin/twibbon"><span className="admin-sidebar-icon">09</span><strong>Twibbon</strong>{isTwibbonDirty && <span className="admin-sidebar-dirty" title="Ada perubahan belum disimpan">M</span>}</a>
+                    <a className={`admin-sidebar-link ${adminSection === 'seo' ? 'is-active' : ''}`} href="/admin/seo"><span className="admin-sidebar-icon">10</span><strong>SEO metadata</strong>{isContentSectionDirty('seo') && <span className="admin-sidebar-dirty" title="Ada perubahan belum disimpan">M</span>}</a>
+                    <a className={`admin-sidebar-link ${adminSection === 'media' ? 'is-active' : ''}`} href="/admin/media"><span className="admin-sidebar-icon">11</span><strong>Media library</strong></a>
                     <span className="admin-sidebar-label">Sistem</span>
                     <a className="admin-sidebar-link" href="/"><span className="admin-sidebar-icon">↗</span><strong>Lihat portfolio</strong></a>
                     <button type="button" className="admin-sidebar-link admin-logout-link" onClick={() => void logout()}><span className="admin-sidebar-icon"><AdminIcon name="logout" /></span><strong>Logout</strong></button>
@@ -548,7 +733,7 @@ export function AdminPage() {
                         <div className="admin-fields">
                             <label>Title<input value={twibbon.title} onChange={(event) => setTwibbon({ ...twibbon, title: event.target.value })} /></label>
                             <label>Eyebrow<input value={twibbon.eyebrow} onChange={(event) => setTwibbon({ ...twibbon, eyebrow: event.target.value })} /></label>
-                            <label className="admin-twibbon-caption-field">Caption template<textarea className="admin-twibbon-caption" value={twibbon.captionTemplate} onChange={(event) => setTwibbon({ ...twibbon, captionTemplate: event.target.value })} /></label>
+                            <label className="admin-twibbon-caption-field">Caption template<textarea className="admin-twibbon-caption" value={twibbon.captionTemplate} onChange={(event) => setTwibbon({ ...twibbon, captionTemplate: event.target.value })} /><small className="admin-field-hint">{twibbon.captionTemplate.length} karakter</small></label>
                             <div className="admin-twibbon-meta">
                                 <label>Subtitle<textarea value={twibbon.subtitle} onChange={(event) => setTwibbon({ ...twibbon, subtitle: event.target.value })} /></label>
                                 <label>Output filename<input value={twibbon.outputFileName} onChange={(event) => setTwibbon({ ...twibbon, outputFileName: event.target.value })} /></label>
@@ -557,6 +742,70 @@ export function AdminPage() {
                         <div className="admin-twibbon-placeholder">
                             <strong>Template PNG</strong>
                             <span>Belum ada foto template. Upload template dapat ditambahkan nanti tanpa mengubah pengaturan ini.</span>
+                        </div>
+                    </section>}
+
+                    {adminSection === 'media' && <section id="admin-media" className="admin-section">
+                        <h2>Media library</h2>
+                        <p className="admin-section-intro">Semua file dari bucket Supabase Storage. URL publik tersedia untuk setiap media dan penghapusan akan langsung menghapus file dari Supabase.</p>
+                        <div className="admin-media-toolbar">
+                            <label className="admin-media-search">Cari media<input type="search" value={mediaSearch} onChange={(event) => setMediaSearch(event.target.value)} placeholder="Nama file, bucket, atau path..." /></label>
+                            <label>Filter tipe<select value={mediaTypeFilter} onChange={(event) => setMediaTypeFilter(event.target.value as typeof mediaTypeFilter)}><option value="all">Semua media</option><option value="image">Gambar</option><option value="other">File lain</option></select></label>
+                            <span className="admin-media-count">{filteredMediaAssets.length} dari {mediaAssets.length} media</span>
+                        </div>
+                        <div className="admin-media-grid">
+                            {filteredMediaAssets.map((asset) => <div className="admin-media-card" key={`${asset.bucket}/${asset.path}`}>
+                                <button type="button" className="admin-media-preview-button" onClick={() => setSelectedMedia(asset)} aria-label={`Preview ${asset.name}`}>
+                                    {asset.mimetype?.startsWith('image/') || /\.(avif|gif|jpe?g|png|svg|webp)$/i.test(asset.name)
+                                        ? <img src={asset.url} alt={asset.name} loading="lazy" />
+                                        : <div className="admin-media-file-preview" aria-hidden="true"><AdminIcon name="save" /><span>{asset.mimetype || 'FILE'}</span></div>}
+                                </button>
+                                <strong>{asset.name}</strong>
+                                <small>{asset.bucket}</small>
+                                <small>{asset.path}</small>
+                                <small>{asset.mimetype ?? 'asset'}{asset.size ? ` · ${(asset.size / 1024).toFixed(1)} KB` : ''}</small>
+                                <div className="admin-media-url"><input readOnly value={asset.url} aria-label={`URL ${asset.name}`} /><button type="button" className="button secondary" onClick={() => {
+                                    void navigator.clipboard.writeText(asset.url).then(() => {
+                                        setCopiedMediaUrl(`${asset.bucket}/${asset.path}`)
+                                        window.setTimeout(() => setCopiedMediaUrl((current) => current === `${asset.bucket}/${asset.path}` ? null : current), 1800)
+                                    }).catch(() => setMessage('URL media tidak dapat disalin.'))
+                                }}>{copiedMediaUrl === `${asset.bucket}/${asset.path}` ? 'Tersalin' : 'Salin URL'}</button></div>
+                                <div className="admin-media-actions"><a className="button secondary" href={asset.url} target="_blank" rel="noreferrer">Buka</a><button type="button" className="danger-button" onClick={() => confirmDelete('asset', async () => {
+                                    const deleteResponse = await fetch('/api/admin/media', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ bucket: asset.bucket, path: asset.path }) })
+                                    if (!deleteResponse.ok) {
+                                        const errorData = await deleteResponse.json().catch(() => ({})) as { error?: string }
+                                        throw new Error(errorData.error || 'Media gagal dihapus.')
+                                    }
+                                    setMediaAssets((current) => current.filter((item) => item.bucket !== asset.bucket || item.path !== asset.path))
+                                    setMessage('Media berhasil dihapus dari Supabase.')
+                                })}>Hapus</button></div>
+                            </div>)}
+                        </div>
+                        {mediaAssets.length === 0 && <p className="admin-empty-state">Belum ada media di bucket ini.</p>}
+                        {mediaAssets.length > 0 && filteredMediaAssets.length === 0 && <p className="admin-empty-state">Tidak ada media yang cocok dengan filter.</p>}
+                    </section>}
+
+                    {adminSection === 'seo' && <section id="admin-seo" className="admin-section">
+                        <h2>SEO metadata</h2>
+                        <p className="admin-section-intro">Atur judul, deskripsi, dan gambar preview yang dipakai saat setiap endpoint dibagikan atau ditemukan mesin pencari.</p>
+                        <div className="admin-seo-list">
+                            {([
+                                ['home', 'Homepage', '/'],
+                                ['projects', 'Projects', '/projects'],
+                                ['twibbon', 'Twibbon Generator', '/twibbon'],
+                                ['spinView', 'Spin View', '/spin-view'],
+                            ] as const).map(([key, label, path]) => {
+                                const metadata = content.seo[key]
+                                const updateSeo = (field: keyof SeoMetadata, value: string) => updateContent({ ...content, seo: { ...content.seo, [key]: { ...metadata, [field]: value } } })
+                                return <div className="admin-card admin-seo-card" key={key}>
+                                    <div className="admin-card-top"><strong>{label}</strong><span>{path}</span></div>
+                                    <div className="admin-fields">
+                                        <label>Title<input value={metadata.title} onChange={(event) => updateSeo('title', event.target.value)} /></label>
+                                        <label>Social image URL<input value={metadata.image} onChange={(event) => updateSeo('image', event.target.value)} placeholder="/images/profile.jpg" /></label>
+                                        <label className="admin-seo-description">Description<textarea value={metadata.description} onChange={(event) => updateSeo('description', event.target.value)} /></label>
+                                    </div>
+                                </div>
+                            })}
                         </div>
                     </section>}
 
@@ -585,6 +834,7 @@ export function AdminPage() {
                                             <button type="button" className="admin-list-button" onClick={() => setEditorTarget({ section, index })}>
                                                 <strong>{getLocalizedText(item.title, 'id') || `${section === 'education' ? 'Education' : 'Experience'} #${index + 1}`}</strong>
                                                 <span>{getLocalizedText(item.period, 'id')} · {getLocalizedText(item.subtitle, 'id') || 'Belum ada detail'}</span>
+                                                {isItemDirty(section, index) && <em className="admin-card-dirty" title="Ada perubahan belum disimpan">M</em>}
                                                 <b>↗</b>
                                             </button>
                                         </div>
@@ -626,7 +876,7 @@ export function AdminPage() {
                             {content.socials.map((social, index) => (
                                 <div className="admin-list-entry" key={`social-${index}`}>
                                     <div className="admin-list-row">
-                                        <button type="button" className="admin-list-button" onClick={() => setEditorTarget({ section: 'social', index })}><strong>{social.label || `Social #${index + 1}`}</strong><span>{social.url}</span><b>↗</b></button>
+                                        <button type="button" className="admin-list-button" onClick={() => setEditorTarget({ section: 'social', index })}><strong>{social.label || `Social #${index + 1}`}</strong><span>{social.url}</span>{isItemDirty('social', index) && <em className="admin-card-dirty" title="Ada perubahan belum disimpan">M</em>}<b>↗</b></button>
                                     </div>
                                     <div className={`admin-card admin-modal-card ${isEditorOpen('social', index) ? 'is-open' : ''}`}>
                                         <div className="admin-card-top">
@@ -654,7 +904,7 @@ export function AdminPage() {
                             {content.skills.map((skill, index) => (
                                 <div className="admin-list-entry" key={`skill-${index}`}>
                                     <div className="admin-list-row">
-                                        <button type="button" className="admin-list-button" onClick={() => setEditorTarget({ section: 'skill', index })}><strong>{skill.name || `Skill #${index + 1}`}</strong><span>{skill.group} · {skill.mark || 'No mark'}</span><b>↗</b></button>
+                                        <button type="button" className="admin-list-button" onClick={() => setEditorTarget({ section: 'skill', index })}><strong>{skill.name || `Skill #${index + 1}`}</strong><span>{skill.group} · {skill.mark || 'No mark'}</span>{isItemDirty('skill', index) && <em className="admin-card-dirty" title="Ada perubahan belum disimpan">M</em>}<b>↗</b></button>
                                     </div>
                                     <div className={`admin-card admin-modal-card ${isEditorOpen('skill', index) ? 'is-open' : ''}`}>
                                         <div className="admin-card-top">
@@ -708,7 +958,7 @@ export function AdminPage() {
                             {content.projects.map((project, index) => (
                                 <div className="admin-list-entry" key={`${project.category}-${project.id ?? index}`}>
                                     <div className="admin-list-row">
-                                        <button type="button" className="admin-list-button" onClick={() => setEditorTarget({ section: 'project', index })}><strong>{project.category === 'Design' ? `Design project #${index + 1}` : project.title || `Project ${index + 1}`}</strong><span>{project.category === 'Design' ? 'Design project' : `${project.category} · ${project.year || 'No year'}`}</span><b>↗</b></button>
+                                        <button type="button" className="admin-list-button" onClick={() => setEditorTarget({ section: 'project', index })}><strong>{project.category === 'Design' ? `Design project #${index + 1}` : project.title || `Project ${index + 1}`}</strong><span>{project.category === 'Design' ? 'Design project' : `${project.category} · ${project.year || 'No year'}`}</span>{isItemDirty('project', index) && <em className="admin-card-dirty" title="Ada perubahan belum disimpan">M</em>}<b>↗</b></button>
                                     </div>
                                     <div className={`admin-card admin-modal-card ${isEditorOpen('project', index) ? 'is-open' : ''}`}>
                                         <div className="admin-card-top">
@@ -817,7 +1067,7 @@ export function AdminPage() {
                             {[{ key: 'twibbon', item: content.endpointDiscovery.twibbon, index: 0 }, { key: 'spinView', item: content.endpointDiscovery.spinView, index: 1 }, ...((content.endpointDiscovery.custom ?? []).map((item, index) => ({ key: `custom-${index}`, item, index: index + 2 })))].map(({ key, item, index }) => (
                                 <div className="admin-list-entry" key={key}>
                                     <div className="admin-list-row">
-                                        <button type="button" className="admin-list-button" onClick={() => setEditorTarget({ section: 'endpoint', index })}><strong>{item.label}</strong><span>{item.path}</span><b>↗</b></button>
+                                        <button type="button" className="admin-list-button" onClick={() => setEditorTarget({ section: 'endpoint', index })}><strong>{item.label}</strong><span>{item.path}</span>{isItemDirty('endpoint', index) && <em className="admin-card-dirty" title="Ada perubahan belum disimpan">M</em>}<b>↗</b></button>
                                     </div>
                                     <div className={`admin-card admin-modal-card ${isEditorOpen('endpoint', index) ? 'is-open' : ''}`}>
                                         <div className="admin-card-top"><strong>{item.label}</strong><button type="button" className="close-button icon-button" onClick={() => setEditorTarget(null)} aria-label="Tutup editor" title="Tutup editor"><AdminIcon name="close" /></button></div>
@@ -833,6 +1083,7 @@ export function AdminPage() {
                                                 }
                                                 updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, custom: (content.endpointDiscovery.custom ?? []).map((entry, itemIndex) => itemIndex === index - 2 ? { ...entry, label: event.target.value } : entry) } })
                                             }} /></label>
+                                            <label className="admin-checkbox-field"><span>Status</span><span><input type="checkbox" checked={item.active !== false} onChange={(event) => updateEndpointAt(index, (current) => ({ ...current, active: event.target.checked }))} /> Aktif</span></label>
                                             <label>Path<input placeholder="/custom-endpoint" value={item.path} onChange={(event) => {
                                                 if (index === 0) {
                                                     updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, twibbon: { ...content.endpointDiscovery.twibbon, path: event.target.value } } })
@@ -844,6 +1095,7 @@ export function AdminPage() {
                                                 }
                                                 updateContent({ ...content, endpointDiscovery: { ...content.endpointDiscovery, custom: (content.endpointDiscovery.custom ?? []).map((entry, itemIndex) => itemIndex === index - 2 ? { ...entry, path: event.target.value } : entry) } })
                                             }} /></label>
+                                            <label>Urutan<input type="number" min="0" value={item.order ?? index} onChange={(event) => updateEndpointAt(index, (current) => ({ ...current, order: Math.max(0, Number(event.target.value) || 0) }))} /></label>
                                         </div>
                                         <div className="admin-grid two-columns">
                                             <label>Title ID<input placeholder="Endpoint baru" value={item.title.id} onChange={(event) => {
@@ -906,7 +1158,20 @@ export function AdminPage() {
                         <button type="button" className="button secondary admin-add-button" onClick={addEndpointCard}><AdminIcon name="plus" /> Tambah endpoint</button>
                     </section>
 
-                    <button className="button primary admin-save-button" type="submit" disabled={uploading}><AdminIcon name="save" /> Simpan perubahan</button>
+                    <div className="admin-editor-toolbar">
+                        <div className="admin-history-actions">
+                            <button type="button" className="button secondary" onClick={undo} disabled={historyIndex <= 0}>Undo</button>
+                            <button type="button" className="button secondary" onClick={redo} disabled={historyIndex >= history.length - 1}>Redo</button>
+                        </div>
+                        <span className={`admin-save-status is-${saveStatus}`} aria-live="polite">
+                            {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'error' ? 'Save failed' : isAnyDirty ? 'Modified' : 'Saved'}
+                        </span>
+                        {draftTimestamp && <small className="admin-draft-time">Draft: {new Date(draftTimestamp).toLocaleString()}</small>}
+                        <a className="button secondary" href="/?preview=1" target="_blank" rel="noreferrer">Preview</a>
+                        <button className="button secondary" type="button" onClick={discardDraft} disabled={!isAnyDirty}>Buang perubahan</button>
+                        <button className="button primary admin-save-button" type="submit" disabled={uploading || saveStatus === 'saving'}><AdminIcon name="save" /> Simpan perubahan</button>
+                    </div>
+                    {draftAvailable && <div className="admin-draft-banner" role="status"><span>Draft lokal tersedia dari sesi sebelumnya.</span><button type="button" className="button secondary" onClick={restoreDraft}>Pulihkan draft</button><button type="button" className="admin-message-close" onClick={() => setDraftAvailable(false)} aria-label="Tutup">×</button></div>}
                     {message && (
                         <div className={`admin-message ${isMessageVisible ? 'visible' : 'hidden'}`} role="status" aria-live="polite">
                             <span>{message}</span>
@@ -920,11 +1185,25 @@ export function AdminPage() {
                     <div className="admin-confirmation-icon"><AdminIcon name="trash" /></div>
                     <span className="eyebrow">KONFIRMASI AKSI</span>
                     <h2 id="delete-confirmation-title">Hapus {deleteConfirmation.label}?</h2>
-                    <p>Item ini akan dihapus dari editor. Perubahan akan diterapkan setelah Anda menekan simpan.</p>
+                    <p>{deleteConfirmation.label === 'asset' ? 'File ini akan langsung dihapus dari Supabase Storage dan tidak dapat dipulihkan.' : 'Item ini akan dihapus dari editor. Perubahan akan diterapkan setelah Anda menekan simpan.'}</p>
                     <div className="admin-confirmation-actions">
                         <button type="button" className="button secondary" onClick={() => setDeleteConfirmation(null)}>Batal</button>
-                        <button type="button" className="button admin-confirm-delete" onClick={() => { deleteConfirmation.remove(); setDeleteConfirmation(null) }}><AdminIcon name="trash" /> Hapus</button>
+                        <button type="button" className="button admin-confirm-delete" onClick={() => {
+                            void Promise.resolve(deleteConfirmation.remove())
+                                .then(() => setDeleteConfirmation(null))
+                                .catch((error: unknown) => setMessage(error instanceof Error ? error.message : 'Aksi gagal dilakukan.'))
+                        }}><AdminIcon name="trash" /> Hapus</button>
                     </div>
+                </div>
+            </div>}
+            {selectedMedia && <div className="admin-media-lightbox" role="dialog" aria-modal="true" aria-labelledby="media-preview-title" onClick={() => setSelectedMedia(null)}>
+                <div className="admin-media-lightbox-card" onClick={(event) => event.stopPropagation()}>
+                    <div className="admin-card-top"><div><span className="eyebrow">MEDIA PREVIEW</span><h2 id="media-preview-title">{selectedMedia.name}</h2></div><button type="button" className="close-button icon-button" onClick={() => setSelectedMedia(null)} aria-label="Tutup preview"><AdminIcon name="close" /></button></div>
+                    {selectedMedia.mimetype?.startsWith('image/') || /\.(avif|gif|jpe?g|png|svg|webp)$/i.test(selectedMedia.name)
+                        ? <img className="admin-media-lightbox-image" src={selectedMedia.url} alt={selectedMedia.name} />
+                        : <div className="admin-media-lightbox-file"><AdminIcon name="save" /><strong>{selectedMedia.mimetype || 'FILE'}</strong></div>}
+                    <div className="admin-media-lightbox-meta"><span>{selectedMedia.bucket}/{selectedMedia.path}</span><a className="button secondary" href={selectedMedia.url} target="_blank" rel="noreferrer">Buka URL</a></div>
+                    <div className="admin-media-url"><input readOnly value={selectedMedia.url} aria-label="URL media preview" /><button type="button" className="button secondary" onClick={() => void navigator.clipboard.writeText(selectedMedia.url).then(() => setMessage('URL media berhasil disalin.')).catch(() => setMessage('URL media tidak dapat disalin.'))}>Salin URL</button></div>
                 </div>
             </div>}
         </main>

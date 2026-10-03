@@ -12,6 +12,93 @@ import './App.css'
 
 type ContactIconName = 'mail' | 'github' | 'instagram' | 'linkedin' | 'whatsapp' | 'x' | 'tiktok' | 'youtube' | 'facebook' | 'telegram' | 'discord' | 'threads' | 'pinterest' | 'reddit' | 'snapchat'
 
+const siteUrl = 'https://irfanhariyanto.my.id'
+
+const seoPathKeys = { '/': 'home', '/projects': 'projects', '/twibbon': 'twibbon', '/spin-view': 'spinView' } as const
+
+function updateSeoMetadata(path: string, projects: Project[] | null, seoSettings: SiteContent['seo'] | null) {
+  const seoKey = seoPathKeys[path as keyof typeof seoPathKeys]
+  if (path.startsWith('/admin')) {
+    document.title = 'Admin CMS — Irfan Hariyanto'
+    return
+  }
+  const seo = (seoKey && seoSettings?.[seoKey]) ?? {
+    title: 'Page not found — Irfan Hariyanto',
+    description: 'The requested page could not be found.',
+    image: '/images/profile.jpg',
+  }
+  const canonicalUrl = `${siteUrl}${path === '/' ? '/' : path}`
+  document.title = seo.title
+
+  const setMeta = (attribute: 'name' | 'property', key: string, content: string) => {
+    let element = document.head.querySelector<HTMLMetaElement>(`meta[${attribute}="${key}"]`)
+    if (!element) {
+      element = document.createElement('meta')
+      element.setAttribute(attribute, key)
+      document.head.appendChild(element)
+    }
+    element.content = content
+  }
+
+  setMeta('name', 'description', seo.description)
+  setMeta('property', 'og:title', seo.title)
+  setMeta('property', 'og:description', seo.description)
+  setMeta('property', 'og:url', canonicalUrl)
+  setMeta('property', 'og:image', `${siteUrl}${seo.image}`)
+  setMeta('name', 'twitter:title', seo.title)
+  setMeta('name', 'twitter:description', seo.description)
+  setMeta('name', 'twitter:image', `${siteUrl}${seo.image}`)
+  setMeta('name', 'robots', path.startsWith('/admin') || !seoKey ? 'noindex, nofollow' : 'index, follow')
+
+  let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')
+  if (!canonical) {
+    canonical = document.createElement('link')
+    canonical.rel = 'canonical'
+    document.head.appendChild(canonical)
+  }
+  canonical.href = canonicalUrl
+
+  const structuredData = path === '/projects'
+    ? {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      name: seo.title,
+      description: seo.description,
+      url: canonicalUrl,
+      mainEntity: {
+        '@type': 'ItemList',
+        itemListElement: (projects ?? []).map((project, index) => ({
+          '@type': 'ListItem',
+          position: index + 1,
+          item: {
+            '@type': 'CreativeWork',
+            name: project.category === 'Design' ? `Design project ${index + 1}` : project.title,
+            description: project.category === 'Design' ? 'Design project by Irfan Hariyanto.' : project.description.en,
+            image: project.image ? (project.image.startsWith('http') ? project.image : `${siteUrl}${project.image}`) : undefined,
+            url: project.url || ('github' in project ? project.github : undefined) || canonicalUrl,
+          },
+        })),
+      },
+    }
+    : {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: seo.title,
+      description: seo.description,
+      url: canonicalUrl,
+      author: { '@type': 'Person', name: 'Irfan Hariyanto', url: siteUrl },
+    }
+
+  let jsonLd = document.head.querySelector<HTMLScriptElement>('script[data-seo-jsonld]')
+  if (!jsonLd) {
+    jsonLd = document.createElement('script')
+    jsonLd.type = 'application/ld+json'
+    jsonLd.dataset.seoJsonld = 'true'
+    document.head.appendChild(jsonLd)
+  }
+  jsonLd.textContent = JSON.stringify(structuredData)
+}
+
 function TypedRole({ text }: { text: string }) {
   const professions = text.split(' | ').map(p => p.trim())
   const [displayText, setDisplayText] = useState('')
@@ -129,20 +216,35 @@ function App() {
   const isProjectsPage = currentPath === '/projects'
   const isTwibbonPage = currentPath === '/twibbon'
   const isSpinViewPage = currentPath === '/spin-view'
-  const adminPaths = ['/admin', '/admin/about', '/admin/education', '/admin/experience', '/admin/socials', '/admin/skills', '/admin/projects', '/admin/endpoints', '/admin/twibbon']
+  const isPreview = new URLSearchParams(window.location.search).get('preview') === '1'
+  const adminPaths = ['/admin', '/admin/about', '/admin/education', '/admin/experience', '/admin/socials', '/admin/skills', '/admin/projects', '/admin/endpoints', '/admin/twibbon', '/admin/seo', '/admin/media']
   const isAdminPage = adminPaths.includes(currentPath)
   const t = translations[language]
 
+  useEffect(() => {
+    updateSeoMetadata(currentPath, content?.projects ?? null, content?.seo ?? null)
+  }, [currentPath, content])
+
   const loadContent = useCallback(async () => {
     try {
-      const response = await fetch('/api/admin/content')
+      if (isPreview) {
+        const rawDraft = window.localStorage.getItem('admin-portfolio-draft-v1')
+        if (rawDraft) {
+          const draft = JSON.parse(rawDraft) as { content?: Partial<SiteContent> }
+          if (draft.content) {
+            setContent(sanitizeSiteContent(draft.content))
+            return
+          }
+        }
+      }
+      const response = await fetch('/api/content')
       if (!response.ok) return
       const data = await response.json() as { content?: Partial<SiteContent> | null }
       setContent(sanitizeSiteContent(data.content ?? {}))
     } catch {
       setContent(sanitizeSiteContent({}))
     }
-  }, [])
+  }, [isPreview])
 
   useEffect(() => {
     void loadContent()
@@ -637,7 +739,10 @@ function App() {
               </div>
 
               <div className="endpoint-grid">
-                {[content.endpointDiscovery.twibbon, content.endpointDiscovery.spinView, ...(content.endpointDiscovery.custom ?? [])].map((item) => (
+                {[content.endpointDiscovery.twibbon, content.endpointDiscovery.spinView, ...(content.endpointDiscovery.custom ?? [])]
+                  .filter((item) => item.active !== false)
+                  .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+                  .map((item) => (
                   <a key={`${item.label}-${item.path}`} className="endpoint-card" href={item.path}>
                     <span className="endpoint-pill">{item.label}</span>
                     <strong>{item.title[language]}</strong>

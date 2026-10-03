@@ -451,11 +451,22 @@ export type SocialLink = {
 }
 
 export type EndpointCard = {
+    id?: string
     label: string
     title: LocalizedText
     description: LocalizedText
     path: string
+    active?: boolean
+    order?: number
 }
+
+export type SeoMetadata = {
+    title: string
+    description: string
+    image: string
+}
+
+export type SeoSettings = Record<'home' | 'projects' | 'twibbon' | 'spinView', SeoMetadata>
 
 export type SiteContent = {
     aboutImage: string
@@ -465,6 +476,7 @@ export type SiteContent = {
     experience: JourneyEntry[]
     socials: SocialLink[]
     contactEmail: string
+    seo: SeoSettings
     endpointDiscovery: {
         kicker: LocalizedText
         title: LocalizedText
@@ -481,6 +493,28 @@ export const defaultContent: SiteContent = {
     education: [...translations.id.journey.educationItems],
     experience: [...translations.id.journey.experienceItems],
     contactEmail: 'irfanhariyanto317@gmail.com',
+    seo: {
+        home: {
+            title: 'Irfan Hariyanto — Informatics Student, Designer & Programmer',
+            description: 'Personal portfolio of Irfan Hariyanto, an Informatics student interested in programming, design, and creative technology.',
+            image: '/images/profile.jpg',
+        },
+        projects: {
+            title: 'Projects by Irfan Hariyanto — Design & Development',
+            description: 'Explore selected design, development, and creative technology projects by Irfan Hariyanto.',
+            image: '/images/developments/webportofoliov3.png',
+        },
+        twibbon: {
+            title: 'Twibbon Generator — Irfan Hariyanto',
+            description: 'Create and download a personalized twibbon with your own photo in a few simple steps.',
+            image: '/images/twibbon.png',
+        },
+        spinView: {
+            title: 'Spin View — Media Tool by Irfan Hariyanto',
+            description: 'Process and transform your media with Spin View, a creative tool by Irfan Hariyanto.',
+            image: '/images/profile.jpg',
+        },
+    },
     socials: [
         { icon: 'mail', label: 'Email', url: 'mailto:irfanhariyanto317@gmail.com' },
         { icon: 'github', label: 'GitHub', url: 'https://github.com/rtwone' },
@@ -491,16 +525,22 @@ export const defaultContent: SiteContent = {
         kicker: { id: translations.id.endpointDiscovery.kicker, en: translations.en.endpointDiscovery.kicker },
         title: { id: translations.id.endpointDiscovery.title, en: translations.en.endpointDiscovery.title },
         twibbon: {
+            id: 'twibbon',
             label: translations.id.endpointDiscovery.twibbon.label,
             title: { id: translations.id.endpointDiscovery.twibbon.title, en: translations.en.endpointDiscovery.twibbon.title },
             description: { id: translations.id.endpointDiscovery.twibbon.description, en: translations.en.endpointDiscovery.twibbon.description },
             path: '/twibbon',
+            active: true,
+            order: 0,
         },
         spinView: {
+            id: 'spin-view',
             label: translations.id.endpointDiscovery.spinView.label,
             title: { id: translations.id.endpointDiscovery.spinView.title, en: translations.en.endpointDiscovery.spinView.title },
             description: { id: translations.id.endpointDiscovery.spinView.description, en: translations.en.endpointDiscovery.spinView.description },
             path: '/spin-view',
+            active: true,
+            order: 1,
         },
         custom: [],
     },
@@ -527,6 +567,14 @@ export async function uploadDefaultPortfolioContentToSupabase() {
 
 export function mergeContentWithDefaults(value?: Partial<SiteContent> | null): SiteContent {
     const source = value ?? {}
+    const seo = {
+        ...defaultContent.seo,
+        ...(source.seo ?? {}),
+        home: { ...defaultContent.seo.home, ...(source.seo?.home ?? {}) },
+        projects: { ...defaultContent.seo.projects, ...(source.seo?.projects ?? {}) },
+        twibbon: { ...defaultContent.seo.twibbon, ...(source.seo?.twibbon ?? {}) },
+        spinView: { ...defaultContent.seo.spinView, ...(source.seo?.spinView ?? {}) },
+    }
     const endpointDiscovery = {
         ...defaultContent.endpointDiscovery,
         ...(source.endpointDiscovery ?? {}),
@@ -554,7 +602,14 @@ export function mergeContentWithDefaults(value?: Partial<SiteContent> | null): S
                 ...(source.endpointDiscovery?.spinView?.description ?? {}),
             },
         },
-        custom: Array.isArray(source.endpointDiscovery?.custom) ? source.endpointDiscovery.custom : defaultContent.endpointDiscovery.custom,
+        custom: Array.isArray(source.endpointDiscovery?.custom)
+            ? source.endpointDiscovery.custom.map((item, index) => ({
+                ...item,
+                id: item.id || `custom-${index}`,
+                active: item.active !== false,
+                order: typeof item.order === 'number' ? item.order : index + 2,
+            }))
+            : defaultContent.endpointDiscovery.custom,
     }
 
     const normalizeJourneyCollection = (items?: unknown) => {
@@ -565,6 +620,7 @@ export function mergeContentWithDefaults(value?: Partial<SiteContent> | null): S
     return {
         ...defaultContent,
         ...source,
+        seo,
         skills: Array.isArray(source.skills) ? source.skills : defaultContent.skills,
         projects: Array.isArray(source.projects) ? source.projects : defaultContent.projects,
         education: normalizeJourneyCollection(source.education),
