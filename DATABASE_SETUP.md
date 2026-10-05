@@ -1,6 +1,6 @@
 # Visitor Stats Database Setup
 
-Visitor Stats uses Supabase PostgreSQL through the server-only `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. The visitor identity is a server-side hash of the real IP address.
+Visitor Stats uses Supabase PostgreSQL through the server-only `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. The browser's persisted visitor ID is used for Like deduplication, with a server-side hash of the real IP address as a fallback.
 
 ## 1. Create a Supabase project
 

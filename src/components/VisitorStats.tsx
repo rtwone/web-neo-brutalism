@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 const page = '/'
 const visitorStorageKey = 'visitor_id'
@@ -56,15 +56,17 @@ export function VisitorStats() {
     const [loading, setLoading] = useState(true)
     const [liking, setLiking] = useState(false)
     const [error, setError] = useState('')
+    const statsRequestVersion = useRef(0)
 
     useEffect(() => {
         let active = true
         const loadStats = async () => {
+            const requestVersion = statsRequestVersion.current
             try {
                 const response = await statsRequest(statsUrl(`/api/stats?page=${encodeURIComponent(page)}`))
                 if (!response.ok) throw new Error('Stats unavailable')
                 const data = await response.json() as Stats & { success: boolean }
-                if (active && data.success) setStats(data)
+                if (active && requestVersion === statsRequestVersion.current && data.success) setStats(data)
                 if (active) setLoading(false)
             } catch {
                 if (active) {
@@ -80,11 +82,12 @@ export function VisitorStats() {
     useEffect(() => {
         const recordView = async () => {
             if (hasRecentView()) return
+            const requestVersion = statsRequestVersion.current
             try {
                 const response = await statsRequest(statsUrl(`/api/stats/view?page=${encodeURIComponent(page)}`), { method: 'POST' })
                 if (!response.ok) return
                 const data = await response.json() as Stats & { success: boolean }
-                if (data.success) {
+                if (requestVersion === statsRequestVersion.current && data.success) {
                     window.localStorage.setItem(viewStorageKey, '1')
                     window.localStorage.setItem(viewTimeStorageKey, wibTimestamp(new Date()))
                     setStats(data)
@@ -102,6 +105,7 @@ export function VisitorStats() {
     const like = async () => {
         if (liking || stats.isLiked) return
         const previous = stats
+        statsRequestVersion.current += 1
         setLiking(true)
         setError('')
         setStats((current) => ({ ...current, likes: current.likes + 1, isLiked: true }))
