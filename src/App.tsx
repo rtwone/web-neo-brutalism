@@ -411,7 +411,7 @@ function App() {
 
   if (isMySf40kPage) {
     return (
-      <main>
+      <main className="mysf-redirect">
         <p>Opening MySF...</p>
         <a href={mySf40kUrl}>Open MySF</a>
       </main>
