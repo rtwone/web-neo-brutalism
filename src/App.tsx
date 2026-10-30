@@ -216,10 +216,16 @@ function App() {
   const isProjectsPage = currentPath === '/projects'
   const isTwibbonPage = currentPath === '/twibbon'
   const isSpinViewPage = currentPath === '/spin-view'
+  const isMySf40kPage = currentPath === '/mysf40k'
+  const mySf40kUrl = 'mysf://mysf.id/buy:internet:volume:UNL40K28D5G_CLM'
   const isPreview = new URLSearchParams(window.location.search).get('preview') === '1'
   const adminPaths = ['/admin', '/admin/about', '/admin/education', '/admin/experience', '/admin/socials', '/admin/skills', '/admin/projects', '/admin/endpoints', '/admin/twibbon', '/admin/seo', '/admin/media']
   const isAdminPage = adminPaths.includes(currentPath)
   const t = translations[language]
+
+  useEffect(() => {
+    if (isMySf40kPage) window.location.replace(mySf40kUrl)
+  }, [isMySf40kPage])
 
   useEffect(() => {
     updateSeoMetadata(currentPath, content?.projects ?? null, content?.seo ?? null)
@@ -247,8 +253,8 @@ function App() {
   }, [isPreview])
 
   useEffect(() => {
-    void loadContent()
-  }, [currentPath, loadContent])
+    if (!isMySf40kPage) void loadContent()
+  }, [currentPath, isMySf40kPage, loadContent])
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? 'dark' : 'light'
     localStorage.setItem('theme', dark ? 'dark' : 'light')
@@ -396,11 +402,20 @@ function App() {
     }
   }
 
-  const isUnknownPage = !['/', '/projects', '/twibbon', '/spin-view', ...adminPaths].includes(currentPath)
+  const isUnknownPage = !['/', '/projects', '/twibbon', '/spin-view', '/mysf40k', ...adminPaths].includes(currentPath)
 
   const handleBrandClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault()
     window.location.assign(currentPath)
+  }
+
+  if (isMySf40kPage) {
+    return (
+      <main>
+        <p>Opening MySF...</p>
+        <a href={mySf40kUrl}>Open MySF</a>
+      </main>
+    )
   }
 
   if (isUnknownPage) {
